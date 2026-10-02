@@ -9,7 +9,7 @@ let nextId = 0;
 const frames = new Map();
 const data = new Map();
 const noop = () => {};
-const context2d = new Proxy({}, {get: (_, name) => name.startsWith('create') ? () => ({addColorStop: noop}) : noop});
+const context2d = new Proxy({}, {get: (_, name) => name === 'createImageData' ? (w,h) => ({data:new Uint8ClampedArray(w*h*4)}) : name.startsWith('create') ? () => ({addColorStop: noop}) : noop});
 class Element {
   constructor() {
     this.listeners = {}; this.style = {}; this.dataset = {}; this.attributes = {};
@@ -27,6 +27,7 @@ class Element {
 const elements = new Map();
 const document = new Element();
 document.hidden = false;
+document.createElement = () => new Element();
 document.getElementById = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
 document.querySelectorAll = () => [];
 const window = new Element();

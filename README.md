@@ -1,6 +1,6 @@
 # Koi Pond
 
-A quiet, interactive pond with 18 koi varieties, feeding, rain, music, and guided breathing. Built with native JavaScript modules and Canvas 2D, with an optional Three.js water layer. No build step or package installation is required.
+A quiet, interactive pond with 18 koi varieties, feeding, rain, music, and guided breathing. Built with native JavaScript modules and Canvas 2D, with a self-contained refractive water layer. No build step or package installation is required.
 
 ## Run
 
@@ -26,7 +26,7 @@ Fish choices, weather, music preference, and language are saved locally on the d
 
 `js/pond.js` coordinates the scene. `js/clock.js` runs physics at 60 steps/second independently of display refresh rate. `js/fish.js` draws both swimming koi and picker previews. `js/audio.js` manages cancelable music transitions. `js/storage.js` provides best-effort local preferences. `pond.css` contains the current visual and responsive overrides.
 
-The CSS water background remains usable if the optional external liquid renderer cannot load. Canvas resolution is capped at 2×. Reduced-motion mode removes liquid rendering and decorative shimmer and reduces repaint frequency; the interactive fish still move. The main simulation and audio pause when the document is hidden.
+Water uses a bounded Canvas 2D buffer for moving caustics, depth shading, and touch-wave refraction, without an external renderer or WebGL. Canvas resolution is capped at 2×. Reduced-motion mode keeps the water texture still and reduces repaint frequency; the interactive fish still move. The main simulation and audio pause when the document is hidden.
 
 ## Regression checks
 

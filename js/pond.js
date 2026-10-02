@@ -1,6 +1,6 @@
 // pond.js — Main orchestrator
 import { Fish } from './fish.js?v=20261002';
-import { RippleManager } from './ripple.js?v=20261002';
+import { RippleManager } from './ripple.js?v=20261002f';
 import { LotusManager } from './lotus.js?v=20261002b';
 import { AnimalManager } from './animals.js?v=20261002c';
 import { KOI_VARIETIES } from './config.js?v=20261002';
@@ -9,7 +9,7 @@ import { SimulationClock } from './clock.js?v=20261002';
 import { BreathingMode } from './breathing.js?v=20261002';
 import { RainManager } from './rain.js?v=20261002';
 import { FoodManager } from './food.js?v=20261002';
-import { CausticLayer } from './caustics.js?v=20261002';
+import { CausticLayer } from './caustics.js?v=20261002f';
 
 let canvas, ctx, w, h;
 let fish = [];
@@ -20,7 +20,6 @@ let breathing;
 let rainManager;
 let foodManager;
 let causticLayer;
-let liquidApp = null;
 let weather = readPreference('weather', 'sunny') === 'rainy' ? 'rainy' : 'sunny';
 const clock = new SimulationClock();
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -32,51 +31,6 @@ let lastDragRippleTime = 0;
 const HOLD_DELAY_MS = 380;
 const HOLD_REPEAT_MS = 320;
 let pressState = null;
-
-function generatePondTexture() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const off = document.createElement('canvas');
-  off.width = w * dpr;
-  off.height = h * dpr;
-  const c = off.getContext('2d');
-  c.scale(dpr, dpr);
-
-  // Base pond color — simple blue-green
-  c.fillStyle = '#8CAFA0';
-  c.fillRect(0, 0, w, h);
-
-  // Soft light patches
-  c.globalCompositeOperation = 'screen';
-  for (let i = 0; i < 5; i++) {
-    const gx = Math.random() * w;
-    const gy = Math.random() * h;
-    const gr = w * (0.15 + Math.random() * 0.25);
-    const g = c.createRadialGradient(gx, gy, 0, gx, gy, gr);
-    g.addColorStop(0, `rgba(175,205,185,${0.1 + Math.random() * 0.08})`);
-    g.addColorStop(1, 'rgba(175,205,185,0)');
-    c.fillStyle = g;
-    c.fillRect(0, 0, w, h);
-  }
-
-  c.globalCompositeOperation = 'source-over';
-  return off.toDataURL('image/png');
-}
-
-async function initLiquid() {
-  // The CSS pond stays visible if WebGL or the optional CDN is unavailable.
-  if (reducedMotion.matches) return;
-  try {
-    const { default: LiquidBackground } = await import('https://cdn.jsdelivr.net/npm/threejs-components@0.0.30/build/backgrounds/liquid1.min.js');
-    const app = LiquidBackground(document.getElementById('liquid-canvas'));
-    app.loadImage(generatePondTexture());
-    app.liquidPlane.material.metalness = 0.08;
-    app.liquidPlane.material.roughness = 0.8;
-    window.__liquidApp = app;
-    window.setWeather(weather);
-  } catch {
-    document.getElementById('liquid-canvas').style.display = 'none';
-  }
-}
 
 function createFish(variety) {
   const margin = Math.min(80, w * 0.2, h * 0.2);
@@ -129,7 +83,7 @@ function handleDrag(px, py) {
 }
 
 function update() {
-  causticLayer.update();
+  causticLayer.update(weather === 'rainy');
 
   // Long-press feeding check
   if (pressState && !pressState.dragging && !breathing.isActive()) {
@@ -173,9 +127,12 @@ function loop(now) {
   if (reducedMotion.matches && now - lastPaint < 1000 / 30) return;
   lastPaint = now;
   ctx.clearRect(0, 0, w, h);
-  if (!reducedMotion.matches) causticLayer.draw(ctx);
+  causticLayer.draw(ctx, ripples.ripples, reducedMotion.matches);
   breathing.drawRing(ctx, w, h);
-  fish.forEach(f => f.draw(ctx));
+  fish.forEach(f => {
+    const bend = causticLayer.refraction(f.x, f.y, ripples.ripples, reducedMotion.matches);
+    ctx.save(); ctx.translate(bend.x, bend.y); f.draw(ctx); ctx.restore();
+  });
   ripples.draw(ctx);
   lotus.draw(ctx);
   foodManager.draw(ctx);
@@ -216,23 +173,6 @@ function loop(now) {
     window.__breathingPhase = null;
   }
 
-  // Pulse liquid displacement with breath
-  const app = window.__liquidApp;
-  if (app) {
-    const weatherDisp = weather === 'rainy' ? 1.5 : 0;
-    if (breathing.isActive()) {
-      const tp = breathing.getTransitionProgress();
-      const bp = breathing.getBreathProgress();
-      const breathDisp = 0.18 + bp * 0.22;
-      app.liquidPlane.uniforms.displacementScale.value = weatherDisp + breathDisp * tp;
-    } else {
-      const cur = app.liquidPlane.uniforms.displacementScale.value;
-      if (Math.abs(cur - weatherDisp) > 0.01) {
-        app.liquidPlane.uniforms.displacementScale.value += (weatherDisp - cur) * 0.05;
-      }
-    }
-  }
-
 }
 
 export function init() {
@@ -262,20 +202,7 @@ export function init() {
     } else {
       rainManager.stop();
     }
-    const app = window.__liquidApp;
-    if (app && !breathing.isActive()) {
-      if (mode === 'rainy') {
-        app.setRain(true);
-        app.liquidPlane.uniforms.displacementScale.value = 1.5;
-      } else {
-        app.setRain(false);
-        app.liquidPlane.uniforms.displacementScale.value = 0;
-      }
-    } else if (app && mode === 'rainy') {
-      app.setRain(true);
-    } else if (app) {
-      app.setRain(false);
-    }
+
   };
 
   // Breathing toggle — called from HTML button
@@ -297,7 +224,6 @@ export function init() {
   window.setAnimalEnabled = (id, enabled) => animals.setEnabled(id, enabled);
 
   resize();
-  initLiquid();
   initFish();
   window.setWeather(weather);
 

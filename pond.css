@@ -2,7 +2,6 @@
 :root { color-scheme: light; --ink: #254C40; --glass: rgba(241,248,232,.65); --edge: rgba(252,255,246,.36); }
 html, body { background: #769E8F; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 body { background: radial-gradient(ellipse at 30% 16%, #B7CFB7 0, transparent 55%), radial-gradient(ellipse at 90% 85%, #547D74 0, transparent 65%), #8CAF9E; }
-#liquid-canvas { opacity: .28; pointer-events: none; }
 #fish-canvas { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 #music-btn, #lang-btn, #breathing-btn, #add-koi-btn, .weather-tabs {
   background: var(--glass); color: var(--ink); border: 1px solid var(--edge);

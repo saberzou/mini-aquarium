@@ -10,11 +10,6 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #3D7A7E; }
-    #liquid-canvas {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      z-index: 1;
-    }
     #fish-canvas {
       position: fixed; inset: 0;
       width: 100%; height: 100%;
@@ -354,10 +349,9 @@
     }
 
   </style>
-  <link rel="stylesheet" href="./pond.css?v=20261002e">
+  <link rel="stylesheet" href="./pond.css?v=20261002f">
 </head>
 <body>
-  <canvas id="liquid-canvas" aria-hidden="true"></canvas>
   <canvas id="fish-canvas" role="img" aria-label="Interactive koi pond"></canvas>
   <div id="pond-hint" data-i18n="hint">Tap for ripples · Hold to feed</div>
   <div class="weather-tabs">
@@ -532,7 +526,7 @@
   <script type="module" src="./js/audio.js?v=20261002"></script>
   <script type="module">
     import { ANIMALS, drawAnimalPreview } from './js/animals.js?v=20261002c';
-    import { init } from './js/pond.js?v=20261002c';
+    import { init } from './js/pond.js?v=20261002f';
     import { Fish } from './js/fish.js?v=20261002';
     import { KOI_VARIETIES } from './js/config.js?v=20261002';
     init();
