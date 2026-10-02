@@ -11,12 +11,13 @@ body { background: radial-gradient(ellipse at 30% 16%, #B7CFB7 0, transparent 55
 #music-btn, #lang-btn { top: calc(20px + env(safe-area-inset-top)); }
 #music-btn { left: calc(20px + env(safe-area-inset-left)); }
 #lang-btn { right: calc(20px + env(safe-area-inset-right)); }
-#breathing-btn, #add-koi-btn, .weather-tabs { bottom: calc(22px + env(safe-area-inset-bottom)); }
+#breathing-btn, #add-koi-btn { bottom: calc(22px + env(safe-area-inset-bottom)); }
 #breathing-btn { left: calc(20px + env(safe-area-inset-left)); }
 #add-koi-btn { right: calc(20px + env(safe-area-inset-right)); }
 #music-btn .bar { background: var(--ink); }
 #music-btn:hover, #lang-btn:hover, #breathing-btn:hover, #add-koi-btn:hover { background: rgba(247,251,240,.85); color: var(--ink); }
-.weather-tabs { border-radius: 25px; }
+.weather-tabs { top: calc(20px + env(safe-area-inset-top)); bottom: auto; height: 44px; border-radius: 25px; }
+.weather-tabs .weather-tab { height: 36px; }
 .weather-tab { height: 42px; color: #476657; padding: 0 17px; font-weight: 500; }
 .weather-tab.active { color: #214639; background: rgba(252,255,246,.8); }
 #breathing-btn.breathing-active { color: #214639; background: rgba(249,253,239,.9); box-shadow: 0 0 0 5px rgba(245,253,234,.12); }
