@@ -227,12 +227,12 @@ export class LotusManager {
 
     // Fixed positions from Saber's markup (percentage-based)
     const spots = [
-      { x: 0.30, y: 0.33, pad: true, flower: true },   // upper-left circle
+      { x: 0.30, y: 0.33, scale: 1.3, pad: true, flower: true },   // upper-left circle
       { x: 0.25, y: 0.74, pad: true, flower: true },   // lower-left circle
-      { x: 0.82, y: 0.87, pad: true, flower: true },   // lower-right circle
+      { x: 0.82, y: 0.87, scale: 1.3, pad: true, flower: true },   // lower-right circle
       // Edge pads
       { x: 0.08, y: 0.12, pad: true, flower: false },  // top-left corner
-      { x: 0.92, y: 0.18, pad: true, flower: false },  // top-right edge
+      { x: 0.92, y: 0.18, scale: 1.3, pad: true, flower: false },  // top-right edge
       { x: 0.06, y: 0.55, pad: true, flower: true },   // left edge
       { x: 0.90, y: 0.52, pad: true, flower: false },  // right edge
       { x: 0.15, y: 0.92, pad: true, flower: false },  // bottom-left
@@ -241,7 +241,7 @@ export class LotusManager {
     for (const spot of spots) {
       const sx = spot.x * w + (Math.random() - 0.5) * 20;
       const sy = spot.y * h + (Math.random() - 0.5) * 20;
-      const size = (37 + Math.random() * 24) * Math.min(1, Math.max(0.62, w / 700));
+      const size = (37 + Math.random() * 24) * Math.min(1, Math.max(0.62, w / 700)) * (spot.scale || 1);
 
       this.pads.push(new LilyPad(sx, sy, size));
 

@@ -1,7 +1,7 @@
 // pond.js — Main orchestrator
 import { Fish } from './fish.js?v=20261002';
 import { RippleManager } from './ripple.js?v=20261002';
-import { LotusManager } from './lotus.js?v=20261002';
+import { LotusManager } from './lotus.js?v=20261002b';
 import { Dragonfly } from './dragonfly.js?v=20261002';
 import { KOI_VARIETIES } from './config.js?v=20261002';
 import { readPreference, savePreference } from './storage.js?v=20261002';
