@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Koi Pond</title>
+  <meta name="description" content="A quiet pond of your own. Feed the koi, listen to the rain, and take a breath.">
+  <meta name="theme-color" content="#769E8F">
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #3D7A7E; }
@@ -351,10 +354,12 @@
     }
 
   </style>
+  <link rel="stylesheet" href="./pond.css?v=20261002">
 </head>
 <body>
-  <canvas id="liquid-canvas"></canvas>
-  <canvas id="fish-canvas"></canvas>
+  <canvas id="liquid-canvas" aria-hidden="true"></canvas>
+  <canvas id="fish-canvas" role="img" aria-label="Interactive koi pond"></canvas>
+  <div id="pond-hint" data-i18n="hint">Tap for ripples · Hold to feed</div>
   <div class="weather-tabs">
     <button class="weather-tab active" data-weather="sunny"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span data-i18n="sunny">晴</span></button>
     <button class="weather-tab" data-weather="rainy"><svg viewBox="0 0 24 24"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M16 14v6M8 14v6M12 16v6"/></svg><span data-i18n="rainy">雨</span></button>
@@ -377,23 +382,23 @@
   </div>
 
   <!-- Add Koi floating button -->
-  <button id="add-koi-btn" title="添加锦鲤" data-i18n-title="addKoi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  <button id="add-koi-btn" aria-expanded="false" aria-controls="koi-panel" title="添加锦鲤" data-i18n-title="addKoi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
   <!-- Koi variety selector panel -->
-  <div id="koi-panel"></div>
+  <div id="koi-panel" role="group" aria-label="Choose koi" inert></div>
 
   <script>
     // ---- Localization (EN / 中) ----
     const I18N = {
       zh: {
-        sunny: '晴', rainy: '雨',
+        sunny: '晴', rainy: '雨', hint: '轻触泛起涟漪 · 长按喂鱼', pond: '可互动的锦鲤池', choose: '选择锦鲤', inPond: '已在池中',
         music: '音乐', breathing: '呼吸模式', addKoi: '添加锦鲤',
         inhale: '吸气...', exhale: '呼气...',
         toggleLabel: 'EN',        // button shows the language you switch TO
         toggleTitle: '切换语言',
       },
       en: {
-        sunny: 'Sunny', rainy: 'Rainy',
+        sunny: 'Sunny', rainy: 'Rainy', hint: 'Tap for ripples · Hold to feed', pond: 'Interactive koi pond', choose: 'Choose koi', inPond: 'In your pond',
         music: 'Music', breathing: 'Breathing', addKoi: 'Add Koi',
         inhale: 'Inhale...', exhale: 'Exhale...',
         toggleLabel: '中',
@@ -402,7 +407,8 @@
     };
 
     // Default to saved preference, else the browser's language
-    let currentLang = localStorage.getItem('koi-lang')
+    function storedLanguage() { try { return localStorage.getItem('koi-lang'); } catch { return null; } }
+    let currentLang = storedLanguage()
       || (navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en');
 
     const langListeners = [];
@@ -412,7 +418,7 @@
 
     function applyLanguage(lang) {
       currentLang = I18N[lang] ? lang : 'en';
-      localStorage.setItem('koi-lang', currentLang);
+      try { localStorage.setItem('koi-lang', currentLang); } catch {}
       const dict = I18N[currentLang];
       document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
 
@@ -424,12 +430,14 @@
       // Title attributes
       document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.dataset.i18nTitle;
-        if (dict[key]) el.title = dict[key];
+        if (dict[key]) { el.title = dict[key]; el.setAttribute('aria-label', dict[key]); }
       });
       // Language button reflects the language you'd switch to
       const langBtn = document.getElementById('lang-btn');
       if (langBtn) { langBtn.textContent = dict.toggleLabel; langBtn.title = dict.toggleTitle; }
 
+      document.getElementById('fish-canvas').setAttribute('aria-label', dict.pond);
+      document.getElementById('koi-panel').setAttribute('aria-label', dict.choose);
       // Notify dynamic consumers (koi cards, breathing label)
       langListeners.forEach(fn => fn(currentLang));
     }
@@ -451,76 +459,6 @@
       if (window.setWeather) window.setWeather(btn.dataset.weather);
     });
 
-    // Music system — crossfade between normal and breathing tracks
-    (() => {
-      const bgMusic = document.getElementById('bg-music');
-      const brMusic = document.getElementById('breathing-music');
-      const btn = document.getElementById('music-btn');
-      const TARGET_VOL = 0.35;
-      const FADE_MS = 1500;
-      const FADE_STEP = 30;
-      let userMuted = false;
-
-      bgMusic.volume = TARGET_VOL;
-      brMusic.volume = 0;
-
-      function fade(audio, from, to, cb) {
-        const steps = FADE_MS / FADE_STEP;
-        const delta = (to - from) / steps;
-        let step = 0;
-        const iv = setInterval(() => {
-          step++;
-          audio.volume = Math.max(0, Math.min(1, from + delta * step));
-          if (step >= steps) { clearInterval(iv); audio.volume = to; if (cb) cb(); }
-        }, FADE_STEP);
-      }
-
-      window._crossfadeToBreathing = () => {
-        if (userMuted) return;
-        brMusic.play().catch(() => {});
-        fade(bgMusic, bgMusic.volume, 0, () => { bgMusic.pause(); });
-        fade(brMusic, 0, TARGET_VOL);
-      };
-      window._crossfadeToNormal = () => {
-        if (userMuted) return;
-        bgMusic.play().catch(() => {});
-        fade(brMusic, brMusic.volume, 0, () => { brMusic.pause(); });
-        fade(bgMusic, 0, TARGET_VOL);
-      };
-
-      const startMusic = () => {
-        if (userMuted) return;
-        const isBreathing = window.isBreathingActive && window.isBreathingActive();
-        const active = isBreathing ? brMusic : bgMusic;
-        active.play().then(() => { btn.classList.remove('paused'); btn.classList.add('playing'); }).catch(() => {});
-      };
-      // Try autoplay; fallback to first interaction (capture phase so stopPropagation doesn't block it)
-      startMusic();
-      let started = false;
-      const onInteract = () => {
-        if (started) return;
-        started = true;
-        startMusic();
-        document.removeEventListener('click', onInteract, true);
-        document.removeEventListener('touchstart', onInteract, true);
-      };
-      document.addEventListener('click', onInteract, true);
-      document.addEventListener('touchstart', onInteract, true);
-      // Toggle button — mute/unmute both
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!userMuted) {
-          userMuted = true;
-          bgMusic.pause(); brMusic.pause();
-          btn.classList.remove('playing'); btn.classList.add('paused');
-        } else {
-          userMuted = false;
-          btn.classList.remove('paused'); btn.classList.add('playing');
-          startMusic();
-        }
-      });
-    })();
-
     // Breathing button (standalone)
     document.getElementById('breathing-btn').addEventListener('click', () => {
       // Close koi panel if open
@@ -528,6 +466,8 @@
       const koiBtn = document.getElementById('add-koi-btn');
       if (panel && panel.classList.contains('visible')) {
         panel.classList.remove('visible');
+        panel.inert = true;
+        koiBtn.setAttribute('aria-expanded', 'false');
         koiBtn && koiBtn.classList.remove('panel-open');
       }
       if (window.toggleBreathing) {
@@ -550,9 +490,10 @@
     });
 
     function updateBreathingUI() {
-      const active = window.isBreathingActive && window.isBreathingActive();
+      const active = window.isBreathingRequested && window.isBreathingRequested();
       if (breathingBtn) {
         breathingBtn.classList.toggle('active', !!active);
+        breathingBtn.setAttribute('aria-pressed', String(!!active));
         breathingBtn.classList.toggle('breathing-active', !!active);
       }
       if (!active) {
@@ -568,6 +509,7 @@
           // Fade out, swap text, fade in via CSS transition
           breathingLabel.classList.remove('visible');
           setTimeout(() => {
+            if (!window.isBreathingRequested?.()) return;
             breathingLabel.textContent = window.t(phase);
             breathingLabel.classList.add('visible');
           }, 320);
@@ -578,9 +520,11 @@
     }
     requestAnimationFrame(updateBreathingUI);
   </script>
+  <script type="module" src="./js/audio.js?v=20261002"></script>
   <script type="module">
-    import { init } from './js/pond.js?v=46';
-    import { KOI_VARIETIES } from './js/config.js?v=3';
+    import { init } from './js/pond.js?v=20261002';
+    import { Fish } from './js/fish.js?v=20261002';
+    import { KOI_VARIETIES } from './js/config.js?v=20261002';
     init();
 
     const btn = document.getElementById('add-koi-btn');
@@ -592,6 +536,7 @@
         const nameEn = card.dataset.variety;
         const inPond = window.hasFish && window.hasFish(nameEn);
         card.classList.toggle('in-pond', inPond);
+        card.setAttribute('aria-pressed', String(!!inPond));
       });
     }
 
@@ -599,20 +544,23 @@
     const cardLocalizers = [];
 
     KOI_VARIETIES.forEach(variety => {
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'koi-card';
       card.dataset.variety = variety.nameEn;
 
       // Green status dot
       const statusDot = document.createElement('div');
       statusDot.className = 'koi-status';
+      statusDot.setAttribute('aria-hidden', 'true');
       card.appendChild(statusDot);
 
       // Canvas koi swatch
       const canvas = document.createElement('canvas');
       canvas.className = 'koi-swatch';
-      canvas.width = 144;
-      canvas.height = 80;
+      canvas.width = 208;
+      canvas.height = 112;
+      canvas.setAttribute('aria-hidden', 'true');
       drawKoiSwatch(canvas, variety);
 
       const nameEl = document.createElement('div');
@@ -657,306 +605,29 @@
 
     // Keep card text in sync with the active language
     window.onLangChange(lang => cardLocalizers.forEach(fn => fn(lang)));
+    updateCardStates();
+    setTimeout(() => document.getElementById('pond-hint').classList.add('dismissed'), 9000);
 
-    /**
-     * Draw a top-down koi silhouette on a canvas with variety-accurate patterns.
-     * Canvas is 144×80, koi points right (head at right).
-     */
+    // Use the live renderer for previews so every variety is represented faithfully.
     function drawKoiSwatch(canvas, variety) {
       const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height;
-      const cx = W / 2, cy = H / 2;
-
-      // Koi body path (top-down oval, head right, tail left)
-      // Body: main ellipse + pectoral fins + tail fork
-      function bodyPath() {
-        ctx.beginPath();
-        // Main body ellipse
-        ctx.ellipse(cx + 8, cy, 48, 20, 0, 0, Math.PI * 2);
-      }
-
-      // Clip everything to body shape
-      function clipToBody(fn) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(cx + 8, cy, 48, 20, 0, 0, Math.PI * 2);
-        ctx.clip();
-        fn();
-        ctx.restore();
-      }
-
-      // --- Background (clear) ---
-      ctx.clearRect(0, 0, W, H);
-
-      // --- Tail fork ---
-      ctx.save();
-      ctx.beginPath();
-      const tx = cx - 40;
-      ctx.moveTo(tx, cy);
-      ctx.bezierCurveTo(tx - 14, cy - 6, tx - 22, cy - 22, tx - 28, cy - 26);
-      ctx.bezierCurveTo(tx - 18, cy - 8, tx - 16, cy - 2, tx - 10, cy);
-      ctx.bezierCurveTo(tx - 16, cy + 2, tx - 18, cy + 8, tx - 28, cy + 26);
-      ctx.bezierCurveTo(tx - 22, cy + 22, tx - 14, cy + 6, tx, cy);
-      ctx.closePath();
-      ctx.fillStyle = variety.body;
-      ctx.globalAlpha = 0.85;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.restore();
-
-      // --- Pectoral fins (small side fins) ---
-      ctx.save();
-      ctx.globalAlpha = 0.6;
-      for (const s of [-1, 1]) {
-        ctx.beginPath();
-        ctx.moveTo(cx + 14, cy + s * 20);
-        ctx.bezierCurveTo(cx + 4, cy + s * 30, cx - 4, cy + s * 32, cx - 14, cy + s * 22);
-        ctx.bezierCurveTo(cx - 6, cy + s * 18, cx + 6, cy + s * 16, cx + 14, cy + s * 20);
-        ctx.fillStyle = variety.body;
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-      ctx.restore();
-
-      // --- Body base ---
-      ctx.save();
-      bodyPath();
-      ctx.fillStyle = variety.body;
-      ctx.fill();
-      ctx.restore();
-
-      // --- Pattern layer (clipped to body) ---
-      const en = variety.nameEn;
-
-      clipToBody(() => {
-        // TANCHO: all white, single red circle near head
-        if (variety.tancho) {
-          ctx.fillStyle = variety.spots;
-          ctx.beginPath();
-          ctx.arc(cx + 38, cy, 9, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // KOHAKU: white body, red patches on top half
-        else if (en === 'Kohaku') {
-          ctx.fillStyle = variety.spots;
-          // Large front-shoulder patch
-          ctx.beginPath();
-          ctx.ellipse(cx + 22, cy - 2, 18, 10, -0.3, 0, Math.PI * 2);
-          ctx.fill();
-          // Mid patch
-          ctx.beginPath();
-          ctx.ellipse(cx - 4, cy + 3, 12, 8, 0.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // TAISHO SANSHOKU: white + red patches + black spots (hi + sumi)
-        else if (en === 'Taisho Sanshoku') {
-          // Red patches
-          ctx.fillStyle = variety.spots;
-          ctx.beginPath();
-          ctx.ellipse(cx + 20, cy - 3, 16, 9, -0.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 5, cy + 2, 10, 7, 0.3, 0, Math.PI * 2);
-          ctx.fill();
-          // Black spots (sumi)
-          ctx.fillStyle = variety.accent || '#1A1A1A';
-          ctx.globalAlpha = 0.85;
-          for (const [sx, sy, sr] of [[cx + 32, cy + 8, 3.5], [cx + 10, cy - 10, 3], [cx - 8, cy - 8, 2.5], [cx - 18, cy + 7, 3]]) {
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.globalAlpha = 1;
-        }
-        // SHOWA: black body + red patches + white patches
-        else if (en === 'Showa') {
-          // Red hi patches
-          ctx.fillStyle = variety.spots;
-          ctx.beginPath();
-          ctx.ellipse(cx + 18, cy - 4, 14, 9, -0.3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 10, cy + 3, 11, 7, 0.2, 0, Math.PI * 2);
-          ctx.fill();
-          // White shiroji patches
-          ctx.fillStyle = variety.accent || '#F5F0E8';
-          ctx.beginPath();
-          ctx.ellipse(cx + 36, cy + 6, 8, 6, 0.4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx + 6, cy - 8, 7, 5, -0.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // BEKKO varieties: base color + scattered black spots
-        else if (en.includes('Bekko')) {
-          ctx.fillStyle = variety.spots;
-          ctx.globalAlpha = 0.9;
-          for (const [sx, sy, sr] of [[cx + 28, cy - 6, 5], [cx + 12, cy + 7, 4], [cx - 2, cy - 8, 4.5], [cx - 14, cy + 5, 3.5], [cx + 20, cy + 8, 3]]) {
-            ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.globalAlpha = 1;
-        }
-        // UTSURI: black body + large accent color patches
-        else if (en.includes('Utsuri')) {
-          ctx.fillStyle = variety.spots; // accent color patches on black body
-          // Large diagonal patches typical of utsuri
-          ctx.beginPath();
-          ctx.ellipse(cx + 28, cy, 16, 14, 0.4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 8, cy - 2, 13, 11, -0.3, 0, Math.PI * 2);
-          ctx.fill();
-          // White/accent wraps chin/nose area
-          ctx.beginPath();
-          ctx.ellipse(cx + 44, cy, 8, 6, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // ASAGI: blue-grey body + scale pattern on back + red belly/flanks
-        else if (en === 'Asagi') {
-          // Red hi on flanks/belly
-          ctx.fillStyle = variety.belly;
-          ctx.beginPath();
-          ctx.ellipse(cx + 8, cy + 10, 32, 10, 0.1, 0, Math.PI * 2);
-          ctx.fill();
-          // Scale reticulation (darker lines on blue-grey back)
-          ctx.strokeStyle = 'rgba(50,80,100,0.55)';
-          ctx.lineWidth = 0.7;
-          for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 8; col++) {
-              const ox = cx - 32 + col * 10 + (row % 2) * 5;
-              const oy = cy - 9 + row * 6;
-              ctx.beginPath();
-              ctx.arc(ox, oy, 4, 0, Math.PI * 2);
-              ctx.stroke();
-            }
-          }
-        }
-        // OGON (solid metallic): add metallic sheen stripes
-        else if (en.includes('Ogon') || en.includes('Matsuba')) {
-          // Lighter center highlight
-          const sheen = ctx.createLinearGradient(0, cy - 20, 0, cy + 20);
-          sheen.addColorStop(0, variety.belly + 'CC');
-          sheen.addColorStop(0.5, variety.spots + '88');
-          sheen.addColorStop(1, variety.body + '44');
-          ctx.fillStyle = sheen;
-          ctx.fillRect(cx - 48, cy - 20, 96, 40);
-          // Scale glint dots for matsuba
-          if (en.includes('Matsuba')) {
-            ctx.fillStyle = 'rgba(60,60,60,0.3)';
-            for (let row = 0; row < 3; row++) {
-              for (let col = 0; col < 7; col++) {
-                const ox = cx - 26 + col * 9 + (row % 2) * 4;
-                const oy = cy - 7 + row * 7;
-                ctx.beginPath();
-                ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
-                ctx.fill();
-              }
-            }
-          }
-        }
-        // GOSHIKI: blue-grey + red patches + dark reticulation (5 colors)
-        else if (en === 'Goshiki') {
-          // Red patches
-          ctx.fillStyle = variety.spots;
-          ctx.beginPath();
-          ctx.ellipse(cx + 20, cy - 3, 13, 8, -0.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 8, cy + 2, 9, 6, 0.2, 0, Math.PI * 2);
-          ctx.fill();
-          // Scale reticulation
-          ctx.strokeStyle = 'rgba(20,30,50,0.5)';
-          ctx.lineWidth = 0.6;
-          for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 9; col++) {
-              const ox = cx - 36 + col * 9 + (row % 2) * 4;
-              const oy = cy - 12 + row * 7;
-              ctx.beginPath();
-              ctx.arc(ox, oy, 3.5, 0, Math.PI * 2);
-              ctx.stroke();
-            }
-          }
-        }
-        // KUMONRYU: black + white large flowing patches
-        else if (en === 'Kumonryu') {
-          ctx.fillStyle = variety.spots;
-          // Flowing dragon-like white patches
-          ctx.beginPath();
-          ctx.moveTo(cx + 48, cy - 8);
-          ctx.bezierCurveTo(cx + 34, cy - 18, cx + 14, cy - 14, cx + 6, cy - 4);
-          ctx.bezierCurveTo(cx + 14, cy + 2, cx + 28, cy - 2, cx + 48, cy + 6);
-          ctx.closePath();
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 16, cy + 4, 14, 9, 0.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // BENIGOI / CHAGOI / KARASHIGOI / KARASUGOI: solid + subtle sheen
-        else if (['Benigoi','Chagoi','Karashigoi','Karasugoi'].some(n => en.includes(n.replace('i','')))) {
-          const sheen = ctx.createRadialGradient(cx + 14, cy - 6, 2, cx + 8, cy, 38);
-          sheen.addColorStop(0, variety.belly + 'BB');
-          sheen.addColorStop(0.6, variety.spots + '44');
-          sheen.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = sheen;
-          ctx.fillRect(cx - 48, cy - 22, 96, 44);
-        }
-        // Default fallback: two spots
-        else {
-          ctx.fillStyle = variety.spots;
-          ctx.globalAlpha = 0.8;
-          ctx.beginPath();
-          ctx.ellipse(cx + 20, cy - 2, 13, 8, -0.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.ellipse(cx - 6, cy + 3, 9, 6, 0.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalAlpha = 1;
-        }
-      });
-
-      // --- Dorsal fin (on top, center ridge) ---
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = variety.body;
-      ctx.beginPath();
-      ctx.moveTo(cx + 28, cy - 20);
-      ctx.bezierCurveTo(cx + 18, cy - 28, cx + 2, cy - 28, cx - 10, cy - 22);
-      ctx.bezierCurveTo(cx - 4, cy - 20, cx + 12, cy - 20, cx + 28, cy - 20);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.restore();
-
-      // --- Body outline ---
-      ctx.save();
-      bodyPath();
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-      ctx.restore();
-
-      // --- Eye ---
-      const eyeX = cx + 50, eyeY = cy - 5;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(eyeX, eyeY, 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(eyeX + 1, eyeY, 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#111';
-      ctx.fill();
-      ctx.restore();
+      const koi = Fish.fromVariety(132, 56, 48, variety);
+      koi.angle = 0; koi.vx = 0; koi.vy = 0; koi.tailPhase = 0;
+      koi.patternSeed = 1.4;
+      koi.draw(ctx);
     }
 
     function openPanel() {
       updateCardStates();
+      panel.inert = false;
+      btn.setAttribute('aria-expanded', 'true');
       panel.classList.add('visible');
       btn.classList.add('panel-open');
     }
 
     function closePanel() {
+      panel.inert = true;
+      btn.setAttribute('aria-expanded', 'false');
       panel.classList.remove('visible');
       btn.classList.remove('panel-open');
     }
@@ -968,6 +639,10 @@
       } else {
         openPanel();
       }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && panel.classList.contains('visible')) { closePanel(); btn.focus(); }
     });
 
     // Close panel when clicking outside

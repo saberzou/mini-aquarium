@@ -1,10 +1,10 @@
 // lotus.js — Pixel-art lotus flowers and lily pads
 
-const PAD_COLORS = ['#A8A858', '#989848', '#687838', '#586828'];
+const PAD_COLORS = ['#91AF88', '#7E9E78', '#6C8E70', '#79987D'];
 const FLOWER_COLORS = [
-  { petals: '#F0E4D0', center: '#D4722A' }, // cream/burnt orange
-  { petals: '#F0E4D0', center: '#D4722A' }, // cream/burnt orange
-  { petals: '#F0E4D0', center: '#D4722A' }, // cream/burnt orange
+  { petals: '#FAF5E9', center: '#D9B66C' }, // cream/burnt orange
+  { petals: '#FAF5E9', center: '#D9B66C' }, // cream/burnt orange
+  { petals: '#FAF5E9', center: '#D9B66C' }, // cream/burnt orange
 ];
 
 class LilyPad {
@@ -63,7 +63,7 @@ class LilyPad {
 
     // Drop shadow — hard edge, matches pad shape
     ctx.save();
-    ctx.translate(8, 10);
+    ctx.translate(3, 5);
     ctx.rotate(this.rotation);
     const notchS = 0.35;
     ctx.beginPath();
@@ -74,7 +74,7 @@ class LilyPad {
       ctx.lineTo(px, py);
     }
     ctx.closePath();
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillStyle = 'rgba(24,61,51,0.14)';
     ctx.fill();
     ctx.restore();
 
@@ -90,12 +90,15 @@ class LilyPad {
       ctx.lineTo(px, py);
     }
     ctx.closePath();
-    ctx.fillStyle = this.color;
+    const surface = ctx.createRadialGradient(-r * 0.3, -r * 0.4, 0, 0, 0, r * 1.5);
+    surface.addColorStop(0, this.color);
+    surface.addColorStop(1, '#63826B');
+    ctx.fillStyle = surface;
     ctx.globalAlpha = 1;
     ctx.fill();
 
     // Vein lines
-    ctx.strokeStyle = 'rgba(40,60,20,0.2)';
+    ctx.strokeStyle = 'rgba(33,76,53,0.13)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i < 5; i++) {
       const a = this.notchAngle + notchSize + (i / 5) * (Math.PI * 2 - notchSize * 2);
@@ -238,7 +241,7 @@ export class LotusManager {
     for (const spot of spots) {
       const sx = spot.x * w + (Math.random() - 0.5) * 20;
       const sy = spot.y * h + (Math.random() - 0.5) * 20;
-      const size = 45 + Math.random() * 35;
+      const size = (37 + Math.random() * 24) * Math.min(1, Math.max(0.62, w / 700));
 
       this.pads.push(new LilyPad(sx, sy, size));
 

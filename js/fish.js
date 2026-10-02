@@ -1,7 +1,7 @@
 // fish.js — Smooth Koi fish with spine-based animation
-import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js';
+import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js?v=20261002';
 
-const SPINE_SEGMENTS = 12;
+const SPINE_SEGMENTS = 20;
 
 export class Fish {
   constructor(x, y, size, colorIndexOrObject) {
@@ -14,6 +14,8 @@ export class Fish {
     } else {
       this.color = FISH_COLORS[(colorIndexOrObject || 0) % FISH_COLORS.length];
     }
+    this.varietyId = this.color.nameEn || null;
+    this.patternSeed = Math.random() * Math.PI * 2;
     this.angle = Math.random() * Math.PI * 2;
     this.speed = WANDER_SPEED * (0.6 + Math.random() * 0.8);
     this.baseSpeed = this.speed;
@@ -25,10 +27,10 @@ export class Fish {
     this.fleeing = false;
 
     // Individual variation
-    this.bodyWidth = 0.38 + Math.random() * 0.06; // width ratio — stocky like reference
-    this.tailWidth = 0.55 + Math.random() * 0.15; // forked tail span
+    this.bodyWidth = 0.35 + Math.random() * 0.035; // width ratio — stocky like reference
+    this.tailWidth = 0.85 + Math.random() * 0.12; // forked tail span
     this.finSize = 0.5 + Math.random() * 0.3; // dorsal fin height
-    this.waveAmp = 0.09 + Math.random() * 0.04; // spine wave amplitude — gentler waggle
+    this.waveAmp = 0.075 + Math.random() * 0.025; // spine wave amplitude — gentler waggle
     this.waveFreq = 1.8 + Math.random() * 0.4;
 
     // Spots - random placement along body
@@ -197,6 +199,7 @@ export class Fish {
     let target = null;
 
     for (const p of pellets) {
+      if (p.eaten) continue;
       const dx = p.x - this.x;
       const dy = p.y - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -249,142 +252,131 @@ export class Fish {
       botPts.push({ x: sp.x - nx * hw, y: sp.y - ny * hw });
     }
 
-    // --- Shadow under fish ---
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#000';
+    // Fins sit beneath the body, with a translucent edge and quiet fin rays.
+    const tail = spine[SPINE_SEGMENTS];
+    const finColor = this.color.nameEn?.includes('Ogon') ? '#E4C788' : '#E9EFE1';
+    ctx.fillStyle = finColor;
+    ctx.globalAlpha = 0.65;
+    const tw = s * 0.43 * this.tailWidth;
+    ctx.beginPath();
+    ctx.moveTo(tail.x + s * 0.08, tail.y);
+    ctx.bezierCurveTo(tail.x - s * 0.12, tail.y - tw * 0.6, tail.x - s * 0.42, tail.y - tw * 1.2, tail.x - s * 0.62, tail.y - tw);
+    ctx.quadraticCurveTo(tail.x - s * 0.5, tail.y - tw * 0.3, tail.x - s * 0.27, tail.y);
+    ctx.quadraticCurveTo(tail.x - s * 0.5, tail.y + tw * 0.3, tail.x - s * 0.62, tail.y + tw);
+    ctx.bezierCurveTo(tail.x - s * 0.42, tail.y + tw * 1.2, tail.x - s * 0.12, tail.y + tw * 0.6, tail.x + s * 0.08, tail.y);
+    ctx.fill();
+    const shoulder = spine[6];
+    const finSwing = Math.sin(this.tailPhase * 0.55) * 0.055;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(shoulder.x + s * 0.12, shoulder.y + side * s * 0.22);
+      ctx.bezierCurveTo(shoulder.x + s * 0.08, shoulder.y + side * s * 0.55,
+        shoulder.x - s * 0.35, shoulder.y + side * s * (0.75 + finSwing),
+        shoulder.x - s * 0.48, shoulder.y + side * s * 0.52);
+      ctx.quadraticCurveTo(shoulder.x - s * 0.4, shoulder.y + side * s * 0.3, shoulder.x, shoulder.y + side * s * 0.2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(250,253,242,0.25)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(shoulder.x, shoulder.y + side * s * 0.23);
+      ctx.lineTo(shoulder.x - s * 0.3, shoulder.y + side * s * 0.55);
+      ctx.stroke();
+    }
+
     ctx.save();
-    ctx.translate(-4, 5);
-    ctx.scale(1.03, 1.03);
+    ctx.translate(2, 4);
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#214D43';
     this._drawBodyPath(ctx, topPts, botPts);
     ctx.fill();
     ctx.restore();
 
-    // --- Main body gradient ---
-    ctx.globalAlpha = 0.88;
-    const grad = ctx.createLinearGradient(0, -s * 0.3, 0, s * 0.3);
-    grad.addColorStop(0, this.color.body);
-    grad.addColorStop(0.6, this.color.belly);
-    grad.addColorStop(1, this.color.body);
-    ctx.fillStyle = grad;
+    ctx.globalAlpha = 1;
     this._drawBodyPath(ctx, topPts, botPts);
+    ctx.fillStyle = this.color.body;
     ctx.fill();
-
-    // --- Water-light shimmer (clipped to body) ---
     ctx.save();
     this._drawBodyPath(ctx, topPts, botPts);
     ctx.clip();
-    const shimX = spine[2].x;
-    const shimY = spine[2].y - s * 0.08;
-    const shimG = ctx.createRadialGradient(shimX, shimY, 0, shimX, shimY, s * 1.1);
-    shimG.addColorStop(0,   'rgba(255,255,255,0.32)');
-    shimG.addColorStop(0.35,'rgba(255,255,255,0.10)');
-    shimG.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.fillStyle = shimG;
-    ctx.globalAlpha = 1;
-    ctx.fillRect(shimX - s * 2, shimY - s, s * 4, s * 2);
+    this._drawPattern(ctx, spine);
+    // A soft dorsal highlight gives volume without bleaching variety markings.
+    const light = ctx.createLinearGradient(0, -s * 0.4, 0, s * 0.4);
+    light.addColorStop(0, 'rgba(17,48,40,0.10)');
+    light.addColorStop(0.38, 'rgba(255,255,249,0.19)');
+    light.addColorStop(0.65, 'rgba(255,255,249,0.02)');
+    light.addColorStop(1, 'rgba(17,48,40,0.16)');
+    ctx.fillStyle = light;
+    ctx.fillRect(-s * 3, -s, s * 4, s * 2);
     ctx.restore();
 
-    // --- Spots ---
-    ctx.globalAlpha = 0.75;
-    for (const spot of this.spots) {
-      const idx = Math.floor(spot.t * SPINE_SEGMENTS);
-      const sp = spine[Math.min(idx, SPINE_SEGMENTS)];
-      const hw = this._bodyHalfWidth(spot.t);
-      const sx = sp.x + spot.offset * hw * 0.5;
-      const sy = sp.y + spot.side * hw * 0.3;
-      const sr = spot.size * s * 0.4;
-      ctx.beginPath();
-      ctx.ellipse(sx, sy, sr * 1.3, sr, 0, 0, Math.PI * 2);
-      ctx.fillStyle = this.color.spots;
-      ctx.fill();
-    }
-
-    // --- Dorsal fin (small triangular, at ~45% like reference) ---
-    ctx.globalAlpha = 0.4;
-    const dIdx = Math.round(SPINE_SEGMENTS * 0.42);
-    const dStart = spine[dIdx];
-    const dMid = spine[dIdx + 1];
-    const dEnd = spine[dIdx + 2];
-    const dHw = this._bodyHalfWidth(dIdx / SPINE_SEGMENTS);
+    // Dorsal ridge follows the spine rather than protruding sideways.
     ctx.beginPath();
-    ctx.moveTo(dStart.x, dStart.y - dHw);
-    ctx.lineTo(dMid.x, dMid.y - dHw - s * 0.18 * this.finSize);
-    ctx.lineTo(dEnd.x, dEnd.y - this._bodyHalfWidth((dIdx + 2) / SPINE_SEGMENTS));
-    ctx.closePath();
-    ctx.fillStyle = this.color.body;
-    ctx.fill();
+    ctx.moveTo(spine[6].x, spine[6].y);
+    ctx.quadraticCurveTo(spine[9].x, spine[9].y - s * 0.06, spine[13].x, spine[13].y);
+    ctx.strokeStyle = 'rgba(255,255,246,0.22)';
+    ctx.lineWidth = s * 0.04;
+    ctx.stroke();
 
-    // --- Pectoral fins (small nubs at ~35%, matching reference) ---
-    ctx.globalAlpha = 0.3;
-    const finSwing = Math.sin(this.tailPhase * 0.6) * 0.15;
-    const pIdx = Math.round(SPINE_SEGMENTS * 0.33);
-    const pBase = spine[pIdx];
-    const pHw = this._bodyHalfWidth(pIdx / SPINE_SEGMENTS);
+    const eye = spine[2];
     for (const side of [-1, 1]) {
       ctx.beginPath();
-      ctx.moveTo(pBase.x + s * 0.05, pBase.y + side * pHw);
-      ctx.lineTo(pBase.x - s * 0.15, pBase.y + side * (pHw + s * 0.12 + finSwing * s * side));
-      ctx.lineTo(pBase.x - s * 0.25, pBase.y + side * (pHw + s * 0.02));
+      ctx.arc(eye.x, eye.y + side * this._bodyHalfWidth(0.1) * 0.8, s * 0.037, 0, Math.PI * 2);
+      ctx.fillStyle = '#233833';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(eye.x + s * 0.008, eye.y + side * this._bodyHalfWidth(0.1) * 0.8 - s * 0.009, s * 0.012, 0, Math.PI * 2);
+      ctx.fillStyle = '#F9F9EF';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  _drawPattern(ctx, spine) {
+    const name = this.varietyId || '';
+    const s = this.size;
+    const patch = (t, side, length, width, color, phase = 0) => {
+      const p = spine[Math.min(SPINE_SEGMENTS, Math.round(t * SPINE_SEGMENTS))];
+      const y = p.y + side * this._bodyHalfWidth(t);
+      ctx.beginPath();
+      for (let i = 0; i <= 36; i++) {
+        const a = i / 36 * Math.PI * 2;
+        const wobble = 1 + 0.13 * Math.sin(a * 3 + phase + this.patternSeed) + 0.06 * Math.cos(a * 5);
+        const x = p.x + Math.cos(a) * s * length * wobble;
+        const py = y + Math.sin(a) * s * width * wobble;
+        if (i === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+      }
       ctx.closePath();
-      ctx.fillStyle = this.color.body;
+      ctx.fillStyle = color;
       ctx.fill();
+    };
+    if (this.color.tancho) {
+      const crown = spine[3];
+      ctx.fillStyle = this.color.spots;
+      ctx.beginPath(); ctx.ellipse(crown.x, crown.y, s * 0.15, s * 0.17, 0, 0, Math.PI * 2); ctx.fill();
+      return;
     }
-
-    // --- Tail fin (deeply forked V-shape, matching reference) ---
-    ctx.globalAlpha = 0.65;
-    const tailPt = spine[SPINE_SEGMENTS];
-    const tw = s * 0.42 * this.tailWidth;
-    // Upper lobe
-    ctx.beginPath();
-    ctx.moveTo(tailPt.x, tailPt.y);
-    ctx.bezierCurveTo(
-      tailPt.x - s * 0.08, tailPt.y - tw * 0.25,
-      tailPt.x - s * 0.22, tailPt.y - tw * 0.75,
-      tailPt.x - s * 0.38, tailPt.y - tw * 1.15
-    );
-    // Rounded lobe tip
-    ctx.quadraticCurveTo(
-      tailPt.x - s * 0.42, tailPt.y - tw * 1.0,
-      tailPt.x - s * 0.30, tailPt.y - tw * 0.55
-    );
-    // V-notch (deep fork)
-    ctx.quadraticCurveTo(
-      tailPt.x - s * 0.18, tailPt.y - tw * 0.08,
-      tailPt.x - s * 0.14, tailPt.y
-    );
-    // Lower lobe (mirror)
-    ctx.quadraticCurveTo(
-      tailPt.x - s * 0.18, tailPt.y + tw * 0.08,
-      tailPt.x - s * 0.30, tailPt.y + tw * 0.55
-    );
-    ctx.quadraticCurveTo(
-      tailPt.x - s * 0.42, tailPt.y + tw * 1.0,
-      tailPt.x - s * 0.38, tailPt.y + tw * 1.15
-    );
-    ctx.bezierCurveTo(
-      tailPt.x - s * 0.22, tailPt.y + tw * 0.75,
-      tailPt.x - s * 0.08, tailPt.y + tw * 0.25,
-      tailPt.x, tailPt.y
-    );
-    ctx.closePath();
-    ctx.fillStyle = this.color.body;
-    ctx.fill();
-
-    // --- Eye (small dot — top-down view) ---
-    ctx.globalAlpha = 0.85;
-    const eyePt = spine[1];
-    const eyeHw = this._bodyHalfWidth(1 / SPINE_SEGMENTS);
-    const eyeR = s * 0.035;
-    for (const side of [-1, 1]) {
-      const ex = eyePt.x;
-      const ey = eyePt.y + side * eyeHw * 0.55;
-      ctx.beginPath();
-      ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fill();
+    const solid = ['Benigoi', 'Karashigoi', 'Chagoi', 'Karasugoi', 'Yamabuki Ogon', 'Gin Matsuba'].includes(name);
+    if (!solid && name !== 'Asagi') {
+      const bekko = name.includes('Bekko');
+      const placements = bekko ? [0.23, 0.4, 0.56, 0.7] : [0.2, 0.44, 0.68];
+      placements.forEach((t, i) => patch(t, (i % 2 ? -1 : 1) * 0.28, bekko ? 0.11 : 0.29, bekko ? 0.13 : 0.33, this.color.spots, i));
+      if (this.color.accent) {
+        [0.3, 0.53, 0.75].forEach((t, i) => patch(t, (i % 2 ? 1 : -1) * 0.45, 0.13, 0.18, this.color.accent, i + 2));
+      }
     }
-
-    ctx.restore();
+    if (name === 'Asagi') {
+      patch(0.37, 0.9, 0.55, 0.12, this.color.belly);
+      patch(0.37, -0.9, 0.55, 0.12, this.color.belly);
+    }
+    if (['Asagi', 'Goshiki', 'Gin Matsuba'].includes(name)) {
+      ctx.strokeStyle = 'rgba(30,56,57,0.22)'; ctx.lineWidth = 0.6;
+      for (let row = -1; row <= 1; row++) {
+        for (let i = 4; i < 16; i += 2) {
+          const p = spine[i];
+          ctx.beginPath(); ctx.arc(p.x + (row % 2) * s * 0.08, p.y + row * s * 0.14, s * 0.1, -1.2, 1.2); ctx.stroke();
+        }
+      }
+    }
   }
 
   _drawBodyPath(ctx, topPts, botPts) {

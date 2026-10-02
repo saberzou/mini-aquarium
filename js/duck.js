@@ -1,5 +1,5 @@
 // duck.js — White duck swimming on the pond surface
-import { FEAR_FORCE, DUCK_SPEED, DUCK_WAKE_INTERVAL_MS, DUCK_AVOID_RADIUS, DUCK_NUDGE_RADIUS } from './config.js';
+import { FEAR_FORCE, DUCK_SPEED, DUCK_WAKE_INTERVAL_MS, DUCK_AVOID_RADIUS, DUCK_NUDGE_RADIUS } from './config.js?v=20261002';
 
 const DUCK_MAX_SPEED = 2.5;
 const DUCK_TURN_RATE = 0.015;

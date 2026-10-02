@@ -1,5 +1,10 @@
 # CLAUDE.md — Koi Pond
 
+## Current implementation (October 2026)
+
+Read `README.md` first. `pond.css` owns current palette/responsive overrides; `js/clock.js` normalizes simulation timing; `js/audio.js` owns cancelable crossfades; `js/storage.js` owns optional saved preferences. The koi picker uses `Fish.draw()` and real variety IDs, including the initial seven koi. Pointer Events handle all pond gestures. The previous notes below describe the original implementation and may be stale. Run `node --experimental-vm-modules tests/regression.cjs` after simulation or interaction changes. The repository already deploys to GitHub Pages on pushes to `main`.
+
+
 ## Project Overview
 
 Koi Pond is an interactive, meditative web experience: a canvas-rendered pond with animated koi fish, lily pads, a dragonfly, water ripples, and a guided breathing mode. It is pure client-side JavaScript — no build tools, no npm, no framework dependencies.

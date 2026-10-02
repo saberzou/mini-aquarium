@@ -1,5 +1,5 @@
 // ripple.js — Click ripple effects
-import { RIPPLE_MAX_RADIUS, RIPPLE_DURATION } from './config.js';
+import { RIPPLE_MAX_RADIUS, RIPPLE_DURATION } from './config.js?v=20261002';
 
 export class Ripple {
   constructor(x, y, scale = 1.0) {

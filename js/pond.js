@@ -1,14 +1,16 @@
 // pond.js — Main orchestrator
-import { Fish } from './fish.js?v=18';
-import { RippleManager } from './ripple.js';
-import { LotusManager } from './lotus.js?v=15';
-import { Dragonfly } from './dragonfly.js?v=10';
-import { FISH_COUNT, FEAR_RADIUS } from './config.js';
-import { BreathingMode } from './breathing.js?v=2';
-import { RainManager } from './rain.js';
-import { Duck } from './duck.js?v=4';
-import { FoodManager } from './food.js';
-import { CausticLayer } from './caustics.js';
+import { Fish } from './fish.js?v=20261002';
+import { RippleManager } from './ripple.js?v=20261002';
+import { LotusManager } from './lotus.js?v=20261002';
+import { Dragonfly } from './dragonfly.js?v=20261002';
+import { KOI_VARIETIES } from './config.js?v=20261002';
+import { readPreference, savePreference } from './storage.js?v=20261002';
+import { SimulationClock } from './clock.js?v=20261002';
+import { BreathingMode } from './breathing.js?v=20261002';
+import { RainManager } from './rain.js?v=20261002';
+import { Duck } from './duck.js?v=20261002';
+import { FoodManager } from './food.js?v=20261002';
+import { CausticLayer } from './caustics.js?v=20261002';
 
 let canvas, ctx, w, h;
 let fish = [];
@@ -21,7 +23,11 @@ let duck;
 let foodManager;
 let causticLayer;
 let liquidApp = null;
-let weather = 'sunny';
+let weather = readPreference('weather', 'sunny') === 'rainy' ? 'rainy' : 'sunny';
+const clock = new SimulationClock();
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let animationId = null;
+let lastPaint = 0;
 let darknessAlpha = 0;
 let lastDragRippleTime = 0;
 
@@ -30,7 +36,7 @@ const HOLD_REPEAT_MS = 320;
 let pressState = null;
 
 function generatePondTexture() {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const off = document.createElement('canvas');
   off.width = w * dpr;
   off.height = h * dpr;
@@ -38,7 +44,7 @@ function generatePondTexture() {
   c.scale(dpr, dpr);
 
   // Base pond color — simple blue-green
-  c.fillStyle = '#78A8B8';
+  c.fillStyle = '#8CAFA0';
   c.fillRect(0, 0, w, h);
 
   // Soft light patches
@@ -48,8 +54,8 @@ function generatePondTexture() {
     const gy = Math.random() * h;
     const gr = w * (0.15 + Math.random() * 0.25);
     const g = c.createRadialGradient(gx, gy, 0, gx, gy, gr);
-    g.addColorStop(0, `rgba(120,168,184,${0.1 + Math.random() * 0.08})`);
-    g.addColorStop(1, 'rgba(120,168,184,0)');
+    g.addColorStop(0, `rgba(175,205,185,${0.1 + Math.random() * 0.08})`);
+    g.addColorStop(1, 'rgba(175,205,185,0)');
     c.fillStyle = g;
     c.fillRect(0, 0, w, h);
   }
@@ -58,47 +64,43 @@ function generatePondTexture() {
   return off.toDataURL('image/png');
 }
 
-function initLiquid() {
-  window.__pondTextureUrl = generatePondTexture();
-
-  const script = document.createElement('script');
-  script.type = 'module';
-  script.textContent = `
-    import LiquidBackground from 'https://cdn.jsdelivr.net/npm/threejs-components@0.0.30/build/backgrounds/liquid1.min.js';
-    const canvas = document.getElementById('liquid-canvas');
-    if (canvas) {
-      const app = LiquidBackground(canvas);
-      app.loadImage(window.__pondTextureUrl);
-      app.liquidPlane.material.metalness = 0.3;
-      app.liquidPlane.material.roughness = 0.5;
-      app.liquidPlane.uniforms.displacementScale.value = 0;
-      app.setRain(false);
-      window.__liquidApp = app;
-    }
-  `;
-  document.body.appendChild(script);
+async function initLiquid() {
+  // The CSS pond stays visible if WebGL or the optional CDN is unavailable.
+  if (reducedMotion.matches) return;
+  try {
+    const { default: LiquidBackground } = await import('https://cdn.jsdelivr.net/npm/threejs-components@0.0.30/build/backgrounds/liquid1.min.js');
+    const app = LiquidBackground(document.getElementById('liquid-canvas'));
+    app.loadImage(generatePondTexture());
+    app.liquidPlane.material.metalness = 0.08;
+    app.liquidPlane.material.roughness = 0.8;
+    window.__liquidApp = app;
+    window.setWeather(weather);
+  } catch {
+    document.getElementById('liquid-canvas').style.display = 'none';
+  }
 }
 
+function createFish(variety) {
+  const margin = Math.min(80, w * 0.2, h * 0.2);
+  return Fish.fromVariety(margin + Math.random() * (w - margin * 2),
+    margin + Math.random() * (h - margin * 2), 24 + Math.random() * 5, variety);
+}
+function saveFish() { savePreference('fish', fish.map(f => f.varietyId)); }
 function initFish() {
-  fish = [];
-  for (let i = 0; i < FISH_COUNT; i++) {
-    const size = 16 + Math.random() * 4;
-    fish.push(new Fish(
-      80 + Math.random() * (w - 160),
-      80 + Math.random() * (h - 160),
-      size, i
-    ));
-  }
+  const defaults = ['Kohaku', 'Taisho Sanshoku', 'Showa', 'Yamabuki Ogon', 'Tancho', 'Asagi', 'Karashigoi'];
+  const saved = readPreference('fish', defaults);
+  const ids = Array.isArray(saved) ? saved : defaults;
+  fish = [...new Set(ids)].map(id => KOI_VARIETIES.find(v => v.nameEn === id)).filter(Boolean).map(createFish);
 }
 
 function resize() {
   w = window.innerWidth;
   h = window.innerHeight;
-  canvas.width = w * (window.devicePixelRatio || 1);
-  canvas.height = h * (window.devicePixelRatio || 1);
+  canvas.width = w * (Math.min(window.devicePixelRatio || 1, 2));
+  canvas.height = h * (Math.min(window.devicePixelRatio || 1, 2));
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
-  ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  ctx.setTransform(Math.min(window.devicePixelRatio || 1, 2), 0, 0, Math.min(window.devicePixelRatio || 1, 2), 0, 0);
   if (dragonfly) dragonfly.resize(w, h);
   if (lotus) lotus.generate(w, h);
   if (rainManager) rainManager.resize(w, h);
@@ -129,12 +131,8 @@ function handleDrag(px, py) {
   }
 }
 
-function loop() {
-  ctx.clearRect(0, 0, w, h);
-
-  // Caustic light patterns — drawn first, on bare water
+function update() {
   causticLayer.update();
-  causticLayer.draw(ctx);
 
   // Long-press feeding check
   if (pressState && !pressState.dragging && !breathing.isActive()) {
@@ -171,37 +169,35 @@ function loop() {
   // Food update
   foodManager.update();
 
-  // Progress ring (drawn behind fish)
-  breathing.drawRing(ctx, w, h);
-
-  fish.forEach(f => f.draw(ctx));
   ripples.update();
-  ripples.draw(ctx);
   lotus.update();
+  if (weather !== 'rainy' && !breathing.isActive()) dragonfly.update();
+  rainManager.update();
+  const targetAlpha = weather === 'rainy' ? 0.18 : 0;
+  darknessAlpha += (targetAlpha - darknessAlpha) * 0.03;
+}
+
+function loop(now) {
+  animationId = requestAnimationFrame(loop);
+  clock.advance(now, update);
+  // Reduced-motion mode keeps interaction but removes ambient shimmer and limits paints.
+  if (reducedMotion.matches && now - lastPaint < 1000 / 30) return;
+  lastPaint = now;
+  ctx.clearRect(0, 0, w, h);
+  if (!reducedMotion.matches) causticLayer.draw(ctx);
+  breathing.drawRing(ctx, w, h);
+  fish.forEach(f => f.draw(ctx));
+  ripples.draw(ctx);
   lotus.draw(ctx);
-
-  // Food pellets float on water surface alongside lotus
   foodManager.draw(ctx);
-
-  // Duck drawn AFTER lotus — it's on the water surface, never under lily pads
-  if (duck) duck.draw(ctx);
-
-  // Dragonfly only in sunny weather, paused during breathing
-  if (weather !== 'rainy' && !breathing.isActive()) {
-    dragonfly.update();
-    dragonfly.draw(ctx);
-  }
-
-  // Rain: surface ripples + splashes on lily pads
+  duck?.draw(ctx);
+  if (weather !== 'rainy' && !breathing.isActive()) dragonfly.draw(ctx);
   if (weather === 'rainy') {
-    rainManager.update();
     rainManager.draw(ctx);
-    lotus.drawRainDrops(ctx);
+    if (!reducedMotion.matches) lotus.drawRainDrops(ctx);
   }
 
   // Darkness overlay for rainy weather
-  const targetAlpha = weather === 'rainy' ? 0.25 : 0;
-  darknessAlpha += (targetAlpha - darknessAlpha) * 0.03;
   if (darknessAlpha > 0.005) {
     ctx.fillStyle = `rgba(0,0,0,${darknessAlpha})`;
     ctx.fillRect(0, 0, w, h);
@@ -249,7 +245,6 @@ function loop() {
     }
   }
 
-  requestAnimationFrame(loop);
 }
 
 export function init() {
@@ -268,7 +263,13 @@ export function init() {
 
   // Weather toggle — controls liquid displacement + rain ripples
   window.setWeather = (mode) => {
-    weather = mode;
+    weather = mode === 'rainy' ? 'rainy' : 'sunny';
+    savePreference('weather', weather);
+    document.querySelectorAll('.weather-tab').forEach(button => {
+      const active = button.dataset.weather === weather;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
     if (mode === 'rainy') {
       rainManager.start();
     } else {
@@ -292,7 +293,8 @@ export function init() {
 
   // Breathing toggle — called from HTML button
   window.toggleBreathing = () => {
-    if (breathing.isActive()) {
+    pressState = null;
+    if (breathing.isActive() && !breathing._deactivating) {
       breathing.deactivate(fish);
       return false;
     } else {
@@ -302,92 +304,64 @@ export function init() {
   };
 
   window.isBreathingActive = () => breathing.isActive();
+  window.isBreathingRequested = () => breathing.isActive() && !breathing._deactivating;
 
   resize();
   initLiquid();
   initFish();
+  window.setWeather(weather);
 
   window.addEventListener('resize', () => {
     resize();
   });
 
-  // --- Mouse: long-press to feed, short click to startle ---
-  canvas.addEventListener('mousedown', e => {
-    if (breathing.isActive()) return;
-    pressState = {
-      x: e.clientX, y: e.clientY,
-      startTime: performance.now(), lastDrop: 0,
-      fed: false, dragging: false,
-    };
+  // One gesture state for mouse, pen and touch. Jitter never startles feeding koi.
+  canvas.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.button !== 0 || breathing.isActive()) return;
+    canvas.setPointerCapture(e.pointerId);
+    pressState = { pointerId: e.pointerId, x: e.clientX, y: e.clientY,
+      startX: e.clientX, startY: e.clientY, startTime: performance.now(),
+      lastDrop: 0, fed: false, dragging: false };
   });
-
-  canvas.addEventListener('mouseup', e => {
-    if (pressState) {
-      if (!pressState.fed && !pressState.dragging) {
-        handleInteraction(pressState.x, pressState.y);
-      }
-      pressState = null;
+  canvas.addEventListener('pointermove', e => {
+    if (!pressState || pressState.pointerId !== e.pointerId) return;
+    pressState.x = e.clientX; pressState.y = e.clientY;
+    if (Math.hypot(e.clientX - pressState.startX, e.clientY - pressState.startY) > 12) {
+      pressState.dragging = true;
+    }
+    if (pressState.dragging && !pressState.fed) handleDrag(e.clientX, e.clientY);
+    // Once feeding starts, dragging scatters food instead of frightening fish.
+    if (pressState.fed) pressState.dragging = false;
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (!pressState || pressState.pointerId !== e.pointerId) return;
+    if (!pressState.fed && !pressState.dragging) handleInteraction(pressState.x, pressState.y);
+    pressState = null;
+    if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+  });
+  const cancelPress = () => { pressState = null; };
+  canvas.addEventListener('pointercancel', cancelPress);
+  canvas.addEventListener('lostpointercapture', cancelPress);
+  window.addEventListener('blur', cancelPress);
+  document.addEventListener('visibilitychange', () => {
+    cancelPress();
+    clock.reset();
+    if (document.hidden) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    } else if (animationId === null) {
+      breathing.resume();
+      animationId = requestAnimationFrame(loop);
     }
   });
-
-  canvas.addEventListener('mouseleave', () => { pressState = null; });
-
-  canvas.addEventListener('mousemove', e => {
-    if (e.buttons === 1) {
-      if (pressState) pressState.dragging = true;
-      handleDrag(e.clientX, e.clientY);
-    }
-  });
-
-  // --- Touch: long-press to feed, short tap to startle, drag to disturb ---
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const t0 = e.touches[0];
-    pressState = {
-      x: t0.clientX, y: t0.clientY,
-      startX: t0.clientX, startY: t0.clientY,
-      startTime: performance.now(), lastDrop: 0,
-      fed: false, dragging: false,
-    };
-  }, { passive: false });
-
-  canvas.addEventListener('touchend', e => {
-    e.preventDefault();
-    if (pressState) {
-      if (!pressState.fed && !pressState.dragging) {
-        handleInteraction(pressState.x, pressState.y);
-      }
-      pressState = null;
-    }
-  }, { passive: false });
-
-  canvas.addEventListener('touchmove', e => {
-    e.preventDefault();
-    const t0 = e.touches[0];
-    const px = t0.clientX, py = t0.clientY;
-    if (pressState) {
-      const ddx = px - pressState.startX;
-      const ddy = py - pressState.startY;
-      if (Math.sqrt(ddx * ddx + ddy * ddy) > 12) pressState.dragging = true;
-      pressState.x = px;
-      pressState.y = py;
-    }
-    handleDrag(px, py);
-  }, { passive: false });
-
-  loop();
+  animationId = requestAnimationFrame(loop);
 }
 
 export function addFish(variety) {
   // Only one of each variety allowed
   if (fish.some(f => f.varietyId === variety.nameEn)) return false;
-  const margin = 80;
-  const x = margin + Math.random() * (w - margin * 2);
-  const y = margin + Math.random() * (h - margin * 2);
-  const size = 16 + Math.random() * 4;
-  const f = Fish.fromVariety(x, y, size, variety);
-  f.varietyId = variety.nameEn;
-  fish.push(f);
+  fish.push(createFish(variety));
+  saveFish();
   return true;
 }
 
@@ -395,6 +369,7 @@ export function removeFish(varietyNameEn) {
   const idx = fish.findIndex(f => f.varietyId === varietyNameEn);
   if (idx === -1) return false;
   fish.splice(idx, 1);
+  saveFish();
   return true;
 }
 

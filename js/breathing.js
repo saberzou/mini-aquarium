@@ -1,5 +1,5 @@
 // breathing.js — Breathing Mode for Koi Pond (Simple: inhale-exhale)
-import { TAIL_SPEED } from './config.js';
+import { TAIL_SPEED } from './config.js?v=20261002';
 
 const INHALE_DURATION = 4000; // ms
 const EXHALE_DURATION = 6000; // ms — slower exhale feels more calming
@@ -31,8 +31,7 @@ export class BreathingMode {
     if (this._active && !this._deactivating) return;
     this._active = true;
     this._deactivating = false;
-    this._transitionProgress = 0;
-    this._transitionStartTime = performance.now();
+    this._transitionStartTime = performance.now() - this._transitionProgress * TRANSITION_DURATION;
     this._phase = 'inhale';
     this._phaseProgress = 0;
     this._phaseStartTime = performance.now();
@@ -43,7 +42,7 @@ export class BreathingMode {
   deactivate(fish) {
     if (!this._active || this._deactivating) return;
     this._deactivating = true;
-    this._deactivateStartTime = performance.now();
+    this._deactivateStartTime = performance.now() - (1 - this._transitionProgress) * TRANSITION_DURATION;
     // Give fish a direction to wander toward when released
     if (fish) {
       for (const f of fish) {
@@ -55,6 +54,14 @@ export class BreathingMode {
 
   isActive() {
     return this._active;
+  }
+
+  resume() {
+    // Returning to a tab begins a clear breath cue instead of jumping mid-phase.
+    if (!this._active) return;
+    this._phase = 'inhale';
+    this._phaseProgress = 0;
+    this._phaseStartTime = performance.now();
   }
 
   // ---- Easing ----
