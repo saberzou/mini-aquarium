@@ -126,7 +126,7 @@ function tick(ms) { now += ms; const callbacks = [...frames.values()]; frames.cl
   const {AnimalManager}=await load('js/animals.js');
   const residents=new AnimalManager(390,844);
   assert.equal(residents.has('turtle'),true);assert.equal(residents.has('ray'),true);
-  for(const id of ['jelly','octopus','star'])residents.setEnabled(id,true);
+  for(const id of ['jelly','octopus','star','crab'])residents.setEnabled(id,true);
   residents.setEnabled('jelly',true);assert.equal(residents.residents.get('jelly').length,1);
   assert.equal(residents.setEnabled('unknown',true),false);
   const restored=new AnimalManager(390,844);assert.equal(restored.has('octopus'),true);
@@ -134,9 +134,9 @@ function tick(ms) { now += ms; const callbacks = [...frames.values()]; frames.cl
   restored.resize(320,568);restored.draw(context2d);
   const order=[];
   for(const [id,group] of restored.residents)group.forEach(a=>{a.draw=()=>order.push(id);});
-  restored.drawLayer(context2d,'seabed');assert.equal(order.join(','),'star,octopus');
+  restored.drawLayer(context2d,'seabed');assert.equal(order.join(','),'star,octopus,crab');
   restored.drawLayer(context2d,'low');restored.drawLayer(context2d,'upper');restored.drawLayer(context2d,'surface');
-  assert.equal(order.join(','),'star,octopus,ray,turtle,jelly');
+  assert.equal(order.join(','),'star,octopus,crab,ray,turtle,jelly');
   console.log('PASS marine depth layers independent of selection order');
 
   for(const group of restored.residents.values())for(const animal of group)assert.ok(Number.isFinite(animal.x)&&Number.isFinite(animal.y));

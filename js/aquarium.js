@@ -2,7 +2,7 @@
 import { Fish } from './fish.js?v=2';
 import { RippleManager } from './ripple.js?v=2';
 import { ReefManager } from './reef.js?v=2';
-import { AnimalManager } from './animals.js?v=2';
+import { AnimalManager } from './animals.js?v=3';
 import { REEF_FISH } from './config.js?v=2';
 import { readPreference, savePreference } from './storage.js?v=2';
 import { SimulationClock } from './clock.js?v=2';

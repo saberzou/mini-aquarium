@@ -4,6 +4,7 @@ export const ANIMALS = [
  {id:'ray',name:'蓝点鳐',nameEn:'Blue-spotted ray',desc:'轻轻掠过海底',descEn:'Glides above the sand'},
  {id:'jelly',name:'月亮水母',nameEn:'Moon jelly',desc:'半透明的海中舞者',descEn:'A translucent little drifter'},
  {id:'octopus',name:'小章鱼',nameEn:'Octopus',desc:'好奇的珊瑚礁邻居',descEn:'A curious reef explorer'},
+ {id:'crab',name:'螃蟹',nameEn:'Crab',desc:'在沙地上横着走的小伙伴',descEn:'A little sideways sand explorer'},
  {id:'star',name:'海星',nameEn:'Sea star',desc:'沙地上的珊瑚色星星',descEn:'A coral-colored sand dweller'}
 ];
 const oval=(ctx,x,y,rx,ry,color,angle=0)=>{ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,angle,0,Math.PI*2);ctx.fill();};
@@ -14,7 +15,7 @@ export class SeaAnimal {
  update(w,h,slow){this.phase+=.025*slow;if(--this.timer<=0){this.targetAngle+=(Math.random()-.5)*1.2;this.timer=140+Math.random()*120;}
  const margin=70;if(this.x<margin)this.targetAngle=0;if(this.x>w-margin)this.targetAngle=Math.PI;if(this.y<100)this.targetAngle=Math.PI/2;if(this.y>h-margin)this.targetAngle=-Math.PI/2;
  let delta=Math.atan2(Math.sin(this.targetAngle-this.angle),Math.cos(this.targetAngle-this.angle));this.angle+=delta*.018;
- const speed=({ray:.44,turtle:.3,jelly:.14,octopus:.16,star:.008})[this.id]*slow;
+ const speed=({ray:.44,turtle:.3,jelly:.14,octopus:.16,crab:.22,star:.008})[this.id]*slow;
  this.x+=Math.cos(this.angle)*speed;this.y+=Math.sin(this.angle)*speed;}
  draw(ctx){const s=this.size,t=this.phase;ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(s,s);
  if(this.id==='turtle'||this.id==='ray')oval(ctx,.12,.2,1,.65,'rgba(12,61,77,.08)');
@@ -55,6 +56,28 @@ export class SeaAnimal {
   oval(ctx,.14,0,.59,.47,'#D99A88');oval(ctx,.22,-.13,.25,.13,'rgba(255,223,195,.2)',-.3);
   for(const side of [-1,1])oval(ctx,-.25,side*.24,.05,.04,'#34545B');
  }
+ if(this.id==='crab'){
+  // Overhead carapace; heading is lateral to the forward-facing eyes/claws.
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(const side of [-1,1]){
+   for(let i=0;i<4;i++){
+    const y=-.26+i*.22,step=Math.sin(t*4+i*Math.PI*.7+side)*.07;
+    ctx.strokeStyle=i%2?'#C8775B':'#D78B6B';ctx.lineWidth=.075;
+    ctx.beginPath();ctx.moveTo(side*.48,y);ctx.lineTo(side*(.86+step),y+.04);ctx.lineTo(side*(1.06+step),y+.27);ctx.stroke();
+   }
+   const lift=Math.sin(t*1.5+side)*.045;
+   ctx.strokeStyle='#C8775B';ctx.lineWidth=.13;ctx.beginPath();ctx.moveTo(side*.45,-.3);ctx.lineTo(side*.79,-.62);ctx.lineTo(side*.76,-.93+lift);ctx.stroke();
+   oval(ctx,side*.76,-.94+lift,.22,.27,'#DE9676',side*.2);
+   // Two curved fingers leave an open pincer gap.
+   ctx.strokeStyle='#E7AA88';ctx.lineWidth=.105;
+   for(const finger of [-1,1]){ctx.beginPath();ctx.moveTo(side*.76+finger*.14,-1.05+lift);ctx.quadraticCurveTo(side*.76+finger*.19,-1.29+lift,side*.76+finger*.065,-1.36+lift);ctx.stroke();}
+  }
+  oval(ctx,0,.035,.7,.5,'rgba(51,82,78,.10)');
+  oval(ctx,0,0,.68,.47,'#D68A6C');oval(ctx,0,-.045,.59,.38,'#E3A07C');
+  oval(ctx,-.12,-.16,.31,.14,'rgba(255,228,189,.22)',-.15);
+  ctx.strokeStyle='#C98064';ctx.lineWidth=.028;ctx.beginPath();ctx.moveTo(-.3,.08);ctx.quadraticCurveTo(0,.22,.3,.08);ctx.stroke();
+  for(const side of [-1,1]){ctx.strokeStyle='#CB8265';ctx.lineWidth=.08;ctx.beginPath();ctx.moveTo(side*.23,-.33);ctx.lineTo(side*.28,-.53);ctx.stroke();oval(ctx,side*.28,-.54,.065,.07,'#294F55');oval(ctx,side*.265,-.56,.017,.019,'#FAEAD1');}
+ }
  if(this.id==='star'){
   ctx.rotate(-.2);ctx.fillStyle='#D99276';ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5,r=i%2?.4:1;const x=Math.cos(a)*r,y=Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();
   ctx.strokeStyle='#ECC0A0';ctx.lineWidth=.05;ctx.lineCap='round';for(let i=0;i<5;i++){let a=i*Math.PI*2/5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*.76,Math.sin(a)*.76);ctx.stroke();for(let j=1;j<4;j++)oval(ctx,Math.cos(a)*j*.2,Math.sin(a)*j*.2,.034,.034,'#F4D5B1');}
@@ -69,7 +92,7 @@ export class AnimalManager {
  poke(x,y){for(const group of this.residents.values())group.forEach(a=>a.poke(x,y));}
  update(ripples,fish,reef,weather,breathing){for(const group of this.residents.values())group.forEach(a=>a.update(this.w,this.h,breathing?.3:1));}
  drawLayer(ctx, layer) {
-  const ids={seabed:['star','octopus'],low:['ray'],upper:['turtle'],surface:['jelly']}[layer] || [];
+  const ids={seabed:['star','octopus','crab'],low:['ray'],upper:['turtle'],surface:['jelly']}[layer] || [];
   for(const id of ids)this.residents.get(id)?.forEach(a=>a.draw(ctx));
  }
  draw(ctx){for(const layer of ['seabed','low','upper','surface'])this.drawLayer(ctx,layer);}
