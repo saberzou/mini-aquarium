@@ -1,5 +1,5 @@
 // breathing.js — Breathing Mode for Mini Aquarium (Simple: inhale-exhale)
-import { TAIL_SPEED } from './config.js?v=1';
+import { TAIL_SPEED } from './config.js?v=2';
 
 const INHALE_DURATION = 4000; // ms
 const EXHALE_DURATION = 6000; // ms — slower exhale feels more calming

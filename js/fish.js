@@ -1,5 +1,5 @@
 // fish.js — Smooth Koi fish with spine-based animation
-import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js?v=1';
+import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js?v=2';
 
 const SPINE_SEGMENTS = 20;
 
@@ -225,48 +225,42 @@ export class Fish {
   }
 
   draw(ctx) {
-    const s=this.size, c=this.color, disc=c.shape==='disc';
-    const height=disc ? .66 : c.shape==='slender' ? .32 : .46;
-    const wag=Math.sin(this.tailPhase)*s*.13;
+    const s=this.size, c=this.color;
+    // The tall flanks of tangs and butterflyfish are narrow from overhead.
+    const width=(c.shape==='disc' ? .24 : c.shape==='slender' ? .25 : .34)*s;
+    const wag=Math.sin(this.tailPhase)*s*.15;
     ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
-    // Soft seabed shadow separates the swimming layer from the reef.
-    ctx.save();ctx.translate(5,9);ctx.fillStyle='rgba(10,57,76,.12)';
-    ctx.beginPath();ctx.ellipse(-s*.2,0,s*.95,s*height,0,0,Math.PI*2);ctx.fill();ctx.restore();
-    // A caudal fan with fine rays and flexible peduncle.
-    ctx.fillStyle=c.fin;ctx.strokeStyle='rgba(252,246,211,.4)';ctx.lineWidth=.7;
-    ctx.beginPath();ctx.moveTo(-s*.84,0);ctx.quadraticCurveTo(-s*1.16,wag-s*.15,-s*1.55,wag-s*.42);
-    ctx.quadraticCurveTo(-s*1.42,wag,-s*1.55,wag+s*.42);ctx.quadraticCurveTo(-s*1.14,wag+s*.15,-s*.84,0);ctx.fill();
-    for(let n=-2;n<=2;n++){ctx.beginPath();ctx.moveTo(-s*.9,0);ctx.lineTo(-s*1.45,wag+n*s*.16);ctx.stroke();}
-    // Distinct dorsal and anal fins give reef fish their broader silhouettes.
-    for(const side of [-1,1]){
-      ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(s*.32,side*s*height*.65);
-      ctx.quadraticCurveTo(-s*.2,side*s*(height+.42),-s*.82,side*s*(height*.7));
-      ctx.lineTo(-s*.65,side*s*.12);ctx.closePath();ctx.fill();
-    }
-    ctx.globalAlpha=1;
-    const body=()=>{ctx.beginPath();ctx.moveTo(s*.86,0);ctx.bezierCurveTo(s*.65,-s*height*.28,s*.35,-s*height,-s*.14,-s*height);ctx.bezierCurveTo(-s*.7,-s*height,-s*.75,-s*.15,-s*.98,0);ctx.bezierCurveTo(-s*.75,s*.15,-s*.7,s*height,-s*.14,s*height);ctx.bezierCurveTo(s*.35,s*height,s*.65,s*height*.28,s*.86,0);ctx.closePath();};
-    body();ctx.fillStyle=c.body;ctx.fill();ctx.save();body();ctx.clip();
-    const band=(x,width,color)=>{ctx.strokeStyle=color;ctx.lineWidth=s*width;ctx.beginPath();ctx.moveTo(s*(x-.12),-s);ctx.bezierCurveTo(s*(x+.12),-s*.25,s*(x-.12),s*.25,s*(x+.1),s);ctx.stroke();};
-    if(c.pattern==='clown'){for(const x of [.44,-.2,-.73]){band(x,.22,'#6C5142');band(x,.15,c.spots);}}
-    if(c.pattern==='tang'){
-      ctx.fillStyle=c.spots;ctx.beginPath();ctx.ellipse(-s*.17,-s*.13,s*.59,s*.27,-.15,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle=c.body;ctx.beginPath();ctx.ellipse(-s*.09,-s*.08,s*.36,s*.13,-.15,0,Math.PI*2);ctx.fill();
-    }
+    const body=()=>{ctx.beginPath();ctx.moveTo(s*.83,0);
+      ctx.bezierCurveTo(s*.79,-width*.65,s*.32,-width,-s*.05,-width);
+      ctx.bezierCurveTo(-s*.48,-width,-s*.74,-width*.2,-s*.98,wag*.35);
+      ctx.bezierCurveTo(-s*.73,width*.2,-s*.48,width,-s*.05,width);
+      ctx.bezierCurveTo(s*.32,width,s*.79,width*.65,s*.83,0);ctx.closePath();};
+    ctx.save();ctx.translate(4,7);ctx.fillStyle='rgba(12,56,76,.09)';body();ctx.fill();ctx.restore();
+    // A vertically oriented tail is seen edge-on, with only a slight roll.
+    ctx.fillStyle=c.fin;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-s*.85,wag*.25);
+    ctx.quadraticCurveTo(-s*1.2,wag-s*.19,-s*1.45,wag-s*.22);
+    ctx.lineTo(-s*1.31,wag);ctx.lineTo(-s*1.45,wag+s*.22);
+    ctx.quadraticCurveTo(-s*1.2,wag+s*.19,-s*.85,wag*.25);ctx.fill();
+    // Paired pectoral fins extend laterally beneath the shoulders.
+    for(const side of [-1,1]){const swing=Math.sin(this.tailPhase*.65)*.07;
+      ctx.beginPath();ctx.moveTo(s*.28,side*width*.7);
+      ctx.bezierCurveTo(s*.17,side*s*(.52+swing),-s*.14,side*s*.66,-s*.3,side*s*.47);
+      ctx.quadraticCurveTo(-s*.2,side*width,s*.12,side*width*.8);ctx.fill();}
+    ctx.globalAlpha=1;body();ctx.fillStyle=c.body;ctx.fill();ctx.save();body();ctx.clip();
+    const band=(x,w,color)=>{ctx.fillStyle=color;ctx.beginPath();ctx.moveTo((x-.05)*s,-s);ctx.lineTo((x+w)*s,-s);ctx.lineTo((x+w+.05)*s,s);ctx.lineTo(x*s,s);ctx.closePath();ctx.fill();};
+    if(c.pattern==='clown')for(const x of [.43,-.2,-.73]){band(x,.2,'#725446');band(x+.03,.13,c.spots);}
+    if(c.pattern==='tang'){ctx.strokeStyle=c.spots;ctx.lineWidth=s*.095;for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(s*.48,side*width*.5);ctx.bezierCurveTo(0,side*width*.88,-s*.45,side*width*.7,-s*.76,side*width*.15);ctx.stroke();}}
     if(c.pattern==='half'){ctx.fillStyle=c.spots;ctx.fillRect(-s*1.1,-s,s,2*s);}
-    if(c.pattern==='butterfly'){for(let x=-.7;x<.5;x+=.18)band(x,.025,'#CAAD76');band(.48,.19,c.spots);band(-.73,.11,c.spots);}
-    if(c.pattern==='idol'){band(.38,.27,c.spots);band(-.45,.29,c.spots);band(-.75,.16,'#E1BB51');}
-    if(c.pattern==='dots'){
-      band(.04,.22,'#405967');ctx.fillStyle=c.spots;
-      for(let x=-.75;x<-.2;x+=.19)for(let y=-.4;y<=.4;y+=.21){ctx.beginPath();ctx.arc(x*s,y*s,s*.035,0,Math.PI*2);ctx.fill();}
-    }
-    const g=ctx.createLinearGradient(0,-s*height,0,s*height);g.addColorStop(0,'rgba(255,253,225,.28)');g.addColorStop(.4,'rgba(255,255,255,.02)');g.addColorStop(1,'rgba(21,55,69,.22)');ctx.fillStyle=g;ctx.fillRect(-2*s,-s,3*s,2*s);ctx.restore();
-    // Pectoral fin moves independently of the tail.
-    ctx.fillStyle=c.fin;ctx.globalAlpha=.7;ctx.beginPath();ctx.moveTo(s*.1,s*.05);ctx.quadraticCurveTo(-s*.05,s*(.4+Math.sin(this.tailPhase*.7)*.08),-s*.34,s*.21);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
-    if(c.pattern==='idol'){ctx.strokeStyle='#F5EFDC';ctx.lineWidth=s*.055;ctx.beginPath();ctx.moveTo(0,-s*.54);ctx.bezierCurveTo(-s*.15,-s*1.28,-s*.8,-s*1.07,-s*1.35,-s*.94);ctx.stroke();}
-    ctx.strokeStyle='rgba(29,59,65,.22)';ctx.lineWidth=.7;ctx.beginPath();ctx.ellipse(s*.34,0,s*.13,s*height*.56,0,-1,1);ctx.stroke();
-    ctx.fillStyle='#F9EAD1';ctx.beginPath();ctx.arc(s*.54,-s*.1,s*.094,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#193D4D';ctx.beginPath();ctx.arc(s*.55,-s*.1,s*.057,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.arc(s*.565,-s*.12,s*.019,0,Math.PI*2);ctx.fill();
+    if(c.pattern==='butterfly'){for(let x=-.7;x<.5;x+=.18)band(x,.025,'#CAAD76');band(.5,.13,c.spots);}
+    if(c.pattern==='idol'){band(.38,.22,c.spots);band(-.38,.25,c.spots);band(-.72,.14,'#E1BB51');}
+    if(c.pattern==='dots'){band(.04,.16,'#405967');ctx.fillStyle=c.spots;for(let x=-.7;x<-.2;x+=.18)for(const side of [-1,1]){ctx.beginPath();ctx.arc(x*s,side*width*.45,s*.033,0,Math.PI*2);ctx.fill();}}
+    const light=ctx.createLinearGradient(0,-width,0,width);light.addColorStop(0,'rgba(14,56,72,.18)');light.addColorStop(.43,'rgba(255,248,219,.25)');light.addColorStop(.6,'rgba(255,248,219,.1)');light.addColorStop(1,'rgba(14,56,72,.2)');ctx.fillStyle=light;ctx.fillRect(-2*s,-s,3*s,2*s);ctx.restore();
+    // Dorsal fin follows the centerline rather than a side-profile sail.
+    ctx.strokeStyle=c.fin;ctx.lineWidth=s*.055;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(s*.1,0);ctx.quadraticCurveTo(-s*.25,-s*.025,-s*.68,wag*.12);ctx.stroke();
+    if(c.pattern==='idol'){ctx.strokeStyle='#F5EFDC';ctx.lineWidth=s*.035;ctx.beginPath();ctx.moveTo(s*.08,0);ctx.bezierCurveTo(-s*.3,-s*.09,-s*.9,wag*.3,-s*1.55,wag*.6);ctx.stroke();}
+    for(const side of [-1,1]){const ey=side*width*.64;
+      ctx.fillStyle='#193D4D';ctx.beginPath();ctx.ellipse(s*.57,ey,s*.045,s*.035,side*.3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#FCF5DF';ctx.beginPath();ctx.arc(s*.58,ey-s*.01,s*.013,0,Math.PI*2);ctx.fill();}
     ctx.restore();
   }
 }

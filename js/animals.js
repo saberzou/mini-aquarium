@@ -1,4 +1,4 @@
-import { readPreference, savePreference } from './storage.js?v=1';
+import { readPreference, savePreference } from './storage.js?v=2';
 export const ANIMALS = [
  {id:'turtle',name:'海龟',nameEn:'Sea turtle',desc:'悠然划动鳍肢',descEn:'Slow, sweeping flippers'},
  {id:'ray',name:'蓝点鳐',nameEn:'Blue-spotted ray',desc:'轻轻掠过海底',descEn:'Glides above the sand'},
@@ -17,7 +17,7 @@ export class SeaAnimal {
  const speed=({ray:.44,turtle:.3,jelly:.14,octopus:.16,star:.008})[this.id]*slow;
  this.x+=Math.cos(this.angle)*speed;this.y+=Math.sin(this.angle)*speed;}
  draw(ctx){const s=this.size,t=this.phase;ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(s,s);
- if(this.id!=='jelly')oval(ctx,.15,.27,1,.65,'rgba(12,61,77,.12)');
+ if(this.id==='turtle'||this.id==='ray')oval(ctx,.12,.2,1,.65,'rgba(12,61,77,.08)');
  if(this.id==='turtle'){
   const stroke=Math.sin(t)*.15;
   for(const side of [-1,1]){oval(ctx,.4,side*.82,.58,.19,'#82AE9A',side*(.7+stroke));oval(ctx,-.68,side*.56,.37,.14,'#719C87',side*-.55);}
@@ -37,17 +37,23 @@ export class SeaAnimal {
   for(const side of [-1,1])oval(ctx,.56,side*.14,.043,.033,'#294D59');
  }
  if(this.id==='jelly'){
-  ctx.strokeStyle='rgba(222,244,246,.48)';ctx.lineWidth=.035;
-  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(-.2,i*.22);ctx.bezierCurveTo(-.95,i*.24+Math.sin(t+i)*.18,-1.3,i*.23-Math.sin(t+i)*.3,-1.9,i*.3+Math.sin(t)*.1);ctx.stroke();}
-  const pulse=1+Math.sin(t*1.8)*.08;oval(ctx,.05,0,.7*pulse,.79*pulse,'rgba(209,235,241,.4)');oval(ctx,.2,-.08,.46,.56,'rgba(241,243,243,.2)');
-  ctx.strokeStyle='rgba(238,253,249,.7)';ctx.lineWidth=.025;ctx.beginPath();ctx.ellipse(.05,0,.7*pulse,.79*pulse,0,0,Math.PI*2);ctx.stroke();
-  for(let i=0;i<4;i++){let a=i*Math.PI/2;oval(ctx,.04+Math.cos(a)*.19,Math.sin(a)*.19,.14,.11,'rgba(219,177,199,.6)',a);}
+  // Circular bell from above; short tentacles show through and around the rim.
+  const pulse=1+Math.sin(t*1.8)*.08;
+  ctx.strokeStyle='rgba(222,244,246,.35)';ctx.lineWidth=.025;
+  for(let i=0;i<12;i++){const a=i*Math.PI/6;ctx.beginPath();ctx.moveTo(Math.cos(a)*.45,Math.sin(a)*.45);ctx.quadraticCurveTo(Math.cos(a+.15)*.78,Math.sin(a+.15)*.78,Math.cos(a+Math.sin(t+i)*.12)*.97,Math.sin(a+Math.sin(t+i)*.12)*.97);ctx.stroke();}
+  oval(ctx,0,0,.77*pulse,.77*pulse,'rgba(209,235,241,.35)');
+  ctx.strokeStyle='rgba(238,253,249,.6)';ctx.lineWidth=.025;ctx.beginPath();ctx.arc(0,0,.77*pulse,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<4;i++){let a=i*Math.PI/2;oval(ctx,Math.cos(a)*.21,Math.sin(a)*.21,.16,.12,'rgba(219,177,199,.55)',a);}
+  oval(ctx,-.21,-.24,.22,.14,'rgba(248,255,251,.18)',-.4);
  }
  if(this.id==='octopus'){
+  // Eight arms crawl across the substrate around the mantle.
   ctx.lineCap='round';
-  for(let i=0;i<8;i++){const a=-1.1+i*.315;ctx.strokeStyle=i%2?'#CE9182':'#DBA192';ctx.lineWidth=.2;ctx.beginPath();ctx.moveTo(-.12,0);ctx.bezierCurveTo(-.6,Math.sin(a)*.8,-1.03+Math.sin(t+i)*.1,Math.sin(a)*1.15,-1.38+Math.cos(i)*.16,Math.sin(a)*.94);ctx.stroke();}
-  oval(ctx,.22,0,.7,.57,'#D99A88');oval(ctx,.37,-.2,.3,.16,'rgba(255,223,195,.2)',-.3);
-  for(const side of [-1,1]){oval(ctx,-.14,side*.29,.12,.11,'#F4DCC3');oval(ctx,-.16,side*.29,.055,.06,'#34545B');}
+  for(let i=0;i<8;i++){const a=i*Math.PI/4, curl=Math.sin(t+i)*.13;
+    ctx.strokeStyle=i%2?'#CE9182':'#DBA192';ctx.lineWidth=.17;ctx.beginPath();ctx.moveTo(Math.cos(a)*.25,Math.sin(a)*.25);
+    ctx.bezierCurveTo(Math.cos(a)*.8,Math.sin(a)*.8,Math.cos(a+.35+curl)*1.2,Math.sin(a+.35+curl)*1.2,Math.cos(a+.5)*.99,Math.sin(a+.5)*.99);ctx.stroke();}
+  oval(ctx,.14,0,.59,.47,'#D99A88');oval(ctx,.22,-.13,.25,.13,'rgba(255,223,195,.2)',-.3);
+  for(const side of [-1,1])oval(ctx,-.25,side*.24,.05,.04,'#34545B');
  }
  if(this.id==='star'){
   ctx.rotate(-.2);ctx.fillStyle='#D99276';ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5,r=i%2?.4:1;const x=Math.cos(a)*r,y=Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();
@@ -62,6 +68,10 @@ export class AnimalManager {
  resize(w,h){this.w=w;this.h=h;for(const group of this.residents.values())group.forEach(a=>a.resize(w,h));}
  poke(x,y){for(const group of this.residents.values())group.forEach(a=>a.poke(x,y));}
  update(ripples,fish,reef,weather,breathing){for(const group of this.residents.values())group.forEach(a=>a.update(this.w,this.h,breathing?.3:1));}
- draw(ctx){for(const group of this.residents.values())group.forEach(a=>a.draw(ctx));}
+ drawLayer(ctx, layer) {
+  const ids={seabed:['star','octopus'],low:['ray'],upper:['turtle'],surface:['jelly']}[layer] || [];
+  for(const id of ids)this.residents.get(id)?.forEach(a=>a.draw(ctx));
+ }
+ draw(ctx){for(const layer of ['seabed','low','upper','surface'])this.drawLayer(ctx,layer);}
 }
 export function drawAnimalPreview(canvas,id){const ctx=canvas.getContext('2d');const animal=new SeaAnimal(id,canvas.width*.56,canvas.height*.5);animal.angle=-.15;animal.phase=1;animal.size=id==='ray'?29:29;animal.draw(ctx);}

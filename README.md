@@ -2,9 +2,10 @@
 
 A tiny ocean of your own: a tranquil, interactive tropical reef, adapted from [Koi Pond](https://github.com/saberzou/koi-pond).
 
-- Nine individually illustrated reef fish, with animated fins and swimming behavior.
+- Nine overhead reef-fish illustrations, with paired fins, dorsal markings, and swimming behavior.
 - Sea turtle, blue-spotted ray, moon jelly, octopus, and sea star companions.
-- Coral gardens, swaying sea grass, anemones, sand shelves, and connected water caustics.
+- Overhead coral colonies, rooted sea-grass crowns, anemones, sand shelves, and connected water caustics.
+- Explicit depth layers: seabed sea stars and octopuses, low-swimming rays, fish, upper-water turtles and jellyfish, then surface ripples.
 - Tap or drag for refractive ripples; hold to feed fish.
 - Daylight / moonlight, optional music, guided breathing, and English / Chinese.
 - Fixed-height companion sheet, keyboard-operable categories, and independent saved preferences.

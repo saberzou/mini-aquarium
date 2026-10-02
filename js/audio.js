@@ -1,4 +1,4 @@
-import { readPreference, savePreference } from './storage.js?v=1';
+import { readPreference, savePreference } from './storage.js?v=2';
 const normal = document.getElementById('bg-music');
 const breathing = document.getElementById('breathing-music');
 const button = document.getElementById('music-btn');

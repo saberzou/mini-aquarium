@@ -14,9 +14,15 @@ export class ReefManager {
  for(let i=0;i<5;i++){let x=Math.cos(i*2)*49,y=Math.sin(i*2)*32;ctx.fillStyle=['#749F9E','#86ABA1','#8EB5A5'][i%3];ctx.beginPath();ctx.ellipse(x,y,36+i*2,24+i*2,i,0,Math.PI*2);ctx.fill();}
  // Branching coral fans: rounded, tapered branches with illuminated tips.
  const branch=(x,y,len,a,depth,color)=>{const xx=x+Math.cos(a)*len,yy=y+Math.sin(a)*len;ctx.strokeStyle=color;ctx.lineWidth=depth*2.2+1;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo((x+xx)/2+3,(y+yy)/2,xx,yy);ctx.stroke();if(depth>0){branch(xx,yy,len*.68,a-.5,depth-1,color);branch(xx,yy,len*.65,a+.46,depth-1,color);}else{ctx.fillStyle='#F3D0AB';ctx.beginPath();ctx.arc(xx,yy,2.1,0,Math.PI*2);ctx.fill();}};
- branch(-28,15,34,-1.9+Math.sin(t*.4+idx)*.035,3,'#D99482');branch(33,33,28,-.9+Math.sin(t*.35)*.025,3,'#D2B886');
- // Mint sea grass sways independently at the reef edge.
- for(let i=0;i<9;i++){const x=-45+i*8;ctx.strokeStyle=i%2?'#5D9E91':'#76B4A0';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,48);ctx.bezierCurveTo(x-9,27,x+Math.sin(t*.7+i)*12,-10-i*3,x+Math.sin(t*.7+i)*16,-29-i*4);ctx.stroke();}
+ // Branching colonies spread radially when viewed from above.
+ for(let i=0;i<7;i++){const angle=i*Math.PI*2/7;
+   branch(-27,-8,17,angle,2,'#D99482');}
+ for(let i=0;i<6;i++)branch(38,22,13,i*Math.PI/3+.3,2,'#D2B886');
+ // Sea-grass crowns: leaves radiate from rooted centers, not an upright fringe.
+ for(const [gx,gy] of [[-49,35],[20,-39]])for(let i=0;i<8;i++){
+   const a=i*Math.PI/4+.3, length=23+(i%3)*8, sway=Math.sin(t*.6+i)*.12;
+   ctx.strokeStyle=i%2?'#5D9E91':'#76B4A0';ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(gx,gy);
+   ctx.quadraticCurveTo(gx+Math.cos(a+sway)*length*.5,gy+Math.sin(a+sway)*length*.5,gx+Math.cos(a+.25+sway)*length,gy+Math.sin(a+.25+sway)*length);ctx.stroke();}
  // Anemone rosette and small clustered polyps.
  for(let i=0;i<20;i++){const a=i*Math.PI*2/20,r=21+Math.sin(t*.5+i)*2;ctx.strokeStyle=i%2?'#DDA394':'#EAB9A0';ctx.lineWidth=4.5;ctx.beginPath();ctx.moveTo(-15,-5);ctx.quadraticCurveTo(-15+Math.cos(a)*r*.65,-5+Math.sin(a)*r*.65,-15+Math.cos(a)*r,-5+Math.sin(a)*r);ctx.stroke();}
  for(let i=0;i<13;i++){const a=i*2.4,r=Math.sqrt(i)*6;ctx.fillStyle=i%2?'#B0CBA7':'#9AB8A0';ctx.beginPath();ctx.arc(40+Math.cos(a)*r,-12+Math.sin(a)*r,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#D3DAB5';ctx.beginPath();ctx.arc(39+Math.cos(a)*r,-14+Math.sin(a)*r,2,0,Math.PI*2);ctx.fill();}

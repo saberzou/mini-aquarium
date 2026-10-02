@@ -132,6 +132,13 @@ function tick(ms) { now += ms; const callbacks = [...frames.values()]; frames.cl
   const restored=new AnimalManager(390,844);assert.equal(restored.has('octopus'),true);
   for(let i=0;i<600;i++)restored.update({},[],{},'day',false);
   restored.resize(320,568);restored.draw(context2d);
+  const order=[];
+  for(const [id,group] of restored.residents)group.forEach(a=>{a.draw=()=>order.push(id);});
+  restored.drawLayer(context2d,'seabed');assert.equal(order.join(','),'star,octopus');
+  restored.drawLayer(context2d,'low');restored.drawLayer(context2d,'upper');restored.drawLayer(context2d,'surface');
+  assert.equal(order.join(','),'star,octopus,ray,turtle,jelly');
+  console.log('PASS marine depth layers independent of selection order');
+
   for(const group of restored.residents.values())for(const animal of group)assert.ok(Number.isFinite(animal.x)&&Number.isFinite(animal.y));
   for(const id of [...restored.residents.keys()])restored.setEnabled(id,false);
   assert.equal(restored.residents.size,0);

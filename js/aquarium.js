@@ -1,14 +1,14 @@
 // aquarium.js — Reef scene and shared interaction lifecycle
-import { Fish } from './fish.js?v=1';
-import { RippleManager } from './ripple.js?v=1';
-import { ReefManager } from './reef.js?v=1';
-import { AnimalManager } from './animals.js?v=1';
-import { REEF_FISH } from './config.js?v=1';
-import { readPreference, savePreference } from './storage.js?v=1';
-import { SimulationClock } from './clock.js?v=1';
-import { BreathingMode } from './breathing.js?v=1';
-import { FoodManager } from './food.js?v=1';
-import { CausticLayer } from './caustics.js?v=1';
+import { Fish } from './fish.js?v=2';
+import { RippleManager } from './ripple.js?v=2';
+import { ReefManager } from './reef.js?v=2';
+import { AnimalManager } from './animals.js?v=2';
+import { REEF_FISH } from './config.js?v=2';
+import { readPreference, savePreference } from './storage.js?v=2';
+import { SimulationClock } from './clock.js?v=2';
+import { BreathingMode } from './breathing.js?v=2';
+import { FoodManager } from './food.js?v=2';
+import { CausticLayer } from './caustics.js?v=2';
 
 let canvas, ctx, w, h;
 let fish = [];
@@ -125,14 +125,17 @@ function loop(now) {
   ctx.clearRect(0, 0, w, h);
   causticLayer.draw(ctx, ripples.ripples, reducedMotion.matches);
   reef.draw(ctx);
+  animals.drawLayer(ctx, 'seabed');
+  animals.drawLayer(ctx, 'low');
   breathing.drawRing(ctx, w, h);
   fish.forEach(f => {
     const bend = causticLayer.refraction(f.x, f.y, ripples.ripples, reducedMotion.matches);
     ctx.save(); ctx.translate(bend.x, bend.y); f.draw(ctx); ctx.restore();
   });
-  ripples.draw(ctx);
+  animals.drawLayer(ctx, 'upper');
+  animals.drawLayer(ctx, 'surface');
   foodManager.draw(ctx);
-  animals.draw(ctx, weather, breathing.isActive());
+  ripples.draw(ctx);
 
   // Moonlight depth overlay
   if (darknessAlpha > 0.005) {
