@@ -45,3 +45,18 @@ button:focus-visible { outline: 2px solid #254C40; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+/* Category navigation stays visible while the companion collection scrolls. */
+#koi-panel { display: flex; flex-direction: column; padding: 10px; overflow: hidden; gap: 10px; }
+.companion-tabs { display: flex; gap: 4px; flex: 0 0 auto; padding: 4px; border-radius: 16px; background: rgba(83,115,85,.07); }
+.companion-tabs button { flex: 1; min-height: 42px; padding: 8px 12px; border: 0; border-radius: 12px; color: #54705B; background: transparent; font: 500 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; cursor: pointer; }
+.companion-tabs button[aria-selected="true"] { background: #F7FAEF; color: #254C40; box-shadow: 0 2px 5px rgba(42,76,47,.05); }
+.companion-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #A1B49A transparent; padding: 4px; }
+.companion-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.companion-grid[hidden] { display: none; }
+.animal-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.animal-card { min-height: 162px; padding: 12px 10px; }
+.animal-card .koi-name { font-size: 13px; }
+.animal-card .koi-desc { font-size: 12px; max-width: 160px; }
+.animal-selection { margin-top: auto; padding-top: 5px; color: #526E58; font-size: 11px; }
+.animal-card.in-pond .animal-selection { color: #365C42; }
+@media (max-width: 350px) { .companion-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }

@@ -354,7 +354,7 @@
     }
 
   </style>
-  <link rel="stylesheet" href="./pond.css?v=20261002">
+  <link rel="stylesheet" href="./pond.css?v=20261002c">
 </head>
 <body>
   <canvas id="liquid-canvas" aria-hidden="true"></canvas>
@@ -385,21 +385,30 @@
   <button id="add-koi-btn" aria-expanded="false" aria-controls="koi-panel" title="添加锦鲤" data-i18n-title="addKoi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
   <!-- Koi variety selector panel -->
-  <div id="koi-panel" role="group" aria-label="Choose koi" inert></div>
+  <div id="koi-panel" role="group" aria-label="Pond companions" inert>
+    <div class="companion-tabs" role="tablist" aria-label="Categories" id="companion-tabs">
+      <button type="button" id="tab-koi" role="tab" aria-selected="true" aria-controls="koi-grid" data-i18n="koiCategory">Koi</button>
+      <button type="button" id="tab-animals" role="tab" aria-selected="false" aria-controls="animal-grid" tabindex="-1" data-i18n="animalCategory">Other animals</button>
+    </div>
+    <div class="companion-content">
+      <div id="koi-grid" class="companion-grid" role="tabpanel" aria-labelledby="tab-koi"></div>
+      <div id="animal-grid" class="companion-grid animal-grid" role="tabpanel" aria-labelledby="tab-animals" hidden></div>
+    </div>
+  </div>
 
   <script>
     // ---- Localization (EN / 中) ----
     const I18N = {
       zh: {
-        sunny: '晴', rainy: '雨', hint: '轻触泛起涟漪 · 长按喂鱼', pond: '可互动的锦鲤池', choose: '选择锦鲤', inPond: '已在池中',
-        music: '音乐', breathing: '呼吸模式', addKoi: '添加锦鲤',
+        sunny: '晴', rainy: '雨', hint: '轻触泛起涟漪 · 长按喂鱼', pond: '可互动的锦鲤池', choose: '池塘伙伴', koiCategory: '锦鲤', animalCategory: '其他动物', inPond: '已在池中',
+        music: '音乐', breathing: '呼吸模式', addKoi: '池塘伙伴',
         inhale: '吸气...', exhale: '呼气...',
         toggleLabel: 'EN',        // button shows the language you switch TO
         toggleTitle: '切换语言',
       },
       en: {
-        sunny: 'Sunny', rainy: 'Rainy', hint: 'Tap for ripples · Hold to feed', pond: 'Interactive koi pond', choose: 'Choose koi', inPond: 'In your pond',
-        music: 'Music', breathing: 'Breathing', addKoi: 'Add Koi',
+        sunny: 'Sunny', rainy: 'Rainy', hint: 'Tap for ripples · Hold to feed', pond: 'Interactive koi pond', choose: 'Pond companions', koiCategory: 'Koi', animalCategory: 'Other animals', inPond: 'In your pond',
+        music: 'Music', breathing: 'Breathing', addKoi: 'Pond companions',
         inhale: 'Inhale...', exhale: 'Exhale...',
         toggleLabel: '中',
         toggleTitle: 'Switch language',
@@ -522,13 +531,16 @@
   </script>
   <script type="module" src="./js/audio.js?v=20261002"></script>
   <script type="module">
-    import { init } from './js/pond.js?v=20261002b';
+    import { ANIMALS, drawAnimalPreview } from './js/animals.js?v=20261002c';
+    import { init } from './js/pond.js?v=20261002c';
     import { Fish } from './js/fish.js?v=20261002';
     import { KOI_VARIETIES } from './js/config.js?v=20261002';
     init();
 
     const btn = document.getElementById('add-koi-btn');
     const panel = document.getElementById('koi-panel');
+    const koiGrid = document.getElementById('koi-grid');
+    const animalGrid = document.getElementById('animal-grid');
 
     // Build koi cards
     function updateCardStates() {
@@ -600,7 +612,51 @@
         updateCardStates();
       });
 
-      panel.appendChild(card);
+      koiGrid.appendChild(card);
+    });
+
+    ANIMALS.forEach(animal => {
+      const card = document.createElement('button');
+      card.type = 'button'; card.className = 'koi-card animal-card';
+      card.dataset.animal = animal.id;
+      const dot = document.createElement('span'); dot.className = 'koi-status'; dot.setAttribute('aria-hidden','true');
+      const canvas = document.createElement('canvas'); canvas.width = 208; canvas.height = 112;
+      canvas.className = 'koi-swatch'; canvas.setAttribute('aria-hidden','true');
+      drawAnimalPreview(canvas,animal.id);
+      const name = document.createElement('span'); name.className = 'koi-name';
+      const desc = document.createElement('span'); desc.className = 'koi-desc';
+      const status = document.createElement('span'); status.className = 'animal-selection'; status.setAttribute('aria-hidden','true');
+      const update = () => {
+        const selected = window.hasAnimal(animal.id);
+        card.classList.toggle('in-pond',selected); card.setAttribute('aria-pressed',String(selected));
+        status.textContent = selected ? (window.getLang()==='zh' ? '已在池中' : 'In your pond') : (window.getLang()==='zh' ? '添加' : 'Add');
+      };
+      cardLocalizers.push(lang=>{
+        name.textContent = lang==='zh' ? animal.name : animal.nameEn;
+        desc.textContent = lang==='zh' ? animal.desc : animal.descEn; update();
+      });
+      card.addEventListener('click',()=>{window.setAnimalEnabled(animal.id,!window.hasAnimal(animal.id));update();});
+      card.append(dot,canvas,name,desc,status); animalGrid.appendChild(card); update();
+    });
+    const categoryTabs = [...document.querySelectorAll('.companion-tabs [role="tab"]')];
+    function selectCategory(index, focus = false) {
+      categoryTabs.forEach((tab,i)=>{
+        tab.setAttribute('aria-selected',String(i===index)); tab.tabIndex=i===index ? 0 : -1;
+      });
+      koiGrid.hidden = index !== 0; animalGrid.hidden = index !== 1;
+      document.querySelector('.companion-content').scrollTop = 0;
+      if(focus) categoryTabs[index].focus();
+    }
+    categoryTabs.forEach((tab,index)=>{
+      tab.addEventListener('click',()=>selectCategory(index));
+      tab.addEventListener('keydown',event=>{
+        let next;
+        if(event.key==='ArrowRight' || event.key==='ArrowLeft') next=1-index;
+        else if(event.key==='Home') next=0;
+        else if(event.key==='End') next=1;
+        else return;
+        event.preventDefault(); selectCategory(next,true);
+      });
     });
 
     // Keep card text in sync with the active language

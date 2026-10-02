@@ -2,13 +2,12 @@
 import { Fish } from './fish.js?v=20261002';
 import { RippleManager } from './ripple.js?v=20261002';
 import { LotusManager } from './lotus.js?v=20261002b';
-import { Dragonfly } from './dragonfly.js?v=20261002';
+import { AnimalManager } from './animals.js?v=20261002c';
 import { KOI_VARIETIES } from './config.js?v=20261002';
 import { readPreference, savePreference } from './storage.js?v=20261002';
 import { SimulationClock } from './clock.js?v=20261002';
 import { BreathingMode } from './breathing.js?v=20261002';
 import { RainManager } from './rain.js?v=20261002';
-import { Duck } from './duck.js?v=20261002';
 import { FoodManager } from './food.js?v=20261002';
 import { CausticLayer } from './caustics.js?v=20261002';
 
@@ -16,10 +15,9 @@ let canvas, ctx, w, h;
 let fish = [];
 let ripples;
 let lotus;
-let dragonfly;
+let animals;
 let breathing;
 let rainManager;
-let duck;
 let foodManager;
 let causticLayer;
 let liquidApp = null;
@@ -101,10 +99,9 @@ function resize() {
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
   ctx.setTransform(Math.min(window.devicePixelRatio || 1, 2), 0, 0, Math.min(window.devicePixelRatio || 1, 2), 0, 0);
-  if (dragonfly) dragonfly.resize(w, h);
+  if (animals) animals.resize(w, h);
   if (lotus) lotus.generate(w, h);
   if (rainManager) rainManager.resize(w, h);
-  if (duck) duck.resize(w, h);
   if (causticLayer) causticLayer.resize(w, h);
 }
 
@@ -114,7 +111,7 @@ function handleInteraction(px, py) {
   for (const f of fish) {
     f.flee(px, py);
   }
-  if (duck) duck.poke(px, py);
+  animals?.poke(px, py);
   lotus.nudge(px, py, 1.5);
 }
 
@@ -150,20 +147,12 @@ function update() {
   // Breathing mode overrides normal fish movement
   if (breathing.isActive()) {
     breathing.update(fish, w, h);
-    if (duck) {
-      duck.setBreathingSlowdown(0.3);
-      duck.update(w, h, ripples, fish, lotus);
-    }
   } else {
     const pellets = foodManager.getPellets();
     fish.forEach(f => {
       f.update(w, h, fish);
       f.seekFood(pellets);
     });
-    if (duck) {
-      duck.setBreathingSlowdown(1);
-      duck.update(w, h, ripples, fish, lotus);
-    }
   }
 
   // Food update
@@ -171,7 +160,7 @@ function update() {
 
   ripples.update();
   lotus.update();
-  if (weather !== 'rainy' && !breathing.isActive()) dragonfly.update();
+  animals.update(ripples, fish, lotus, weather, breathing.isActive());
   rainManager.update();
   const targetAlpha = weather === 'rainy' ? 0.18 : 0;
   darknessAlpha += (targetAlpha - darknessAlpha) * 0.03;
@@ -190,8 +179,7 @@ function loop(now) {
   ripples.draw(ctx);
   lotus.draw(ctx);
   foodManager.draw(ctx);
-  duck?.draw(ctx);
-  if (weather !== 'rainy' && !breathing.isActive()) dragonfly.draw(ctx);
+  animals.draw(ctx, weather, breathing.isActive());
   if (weather === 'rainy') {
     rainManager.draw(ctx);
     if (!reducedMotion.matches) lotus.drawRainDrops(ctx);
@@ -254,10 +242,9 @@ export function init() {
   w = window.innerWidth;
   h = window.innerHeight;
   lotus = new LotusManager(w, h);
-  dragonfly = new Dragonfly(w, h);
+  animals = new AnimalManager(w, h);
   breathing = new BreathingMode();
   rainManager = new RainManager(w, h);
-  duck = new Duck(w * 0.3 + Math.random() * w * 0.4, h * 0.3 + Math.random() * h * 0.4);
   foodManager = new FoodManager();
   causticLayer = new CausticLayer(w, h);
 
@@ -305,6 +292,9 @@ export function init() {
 
   window.isBreathingActive = () => breathing.isActive();
   window.isBreathingRequested = () => breathing.isActive() && !breathing._deactivating;
+
+  window.hasAnimal = id => animals.has(id);
+  window.setAnimalEnabled = (id, enabled) => animals.setEnabled(id, enabled);
 
   resize();
   initLiquid();

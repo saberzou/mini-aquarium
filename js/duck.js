@@ -13,13 +13,14 @@ const DUCK_AVOIDANCE_FORCE = FEAR_FORCE * 0.35;
 const CURIOSITY_BOOST = 1.8;
 
 export class Duck {
-  constructor(x, y) {
+  constructor(x, y, duckling = false) {
     this.x = x;
     this.y = y;
-    this.size = DUCK_SIZE;
+    this.duckling = duckling;
+    this.size = duckling ? 31 : DUCK_SIZE;
     this.angle = Math.random() * Math.PI * 2;
     this.speed = DUCK_SPEED;
-    this.baseSpeed = DUCK_SPEED;
+    this.baseSpeed = duckling ? 0.58 : DUCK_SPEED;
     this.vx = Math.cos(this.angle) * this.speed;
     this.vy = Math.sin(this.angle) * this.speed;
     this.targetAngle = this.angle;
@@ -52,7 +53,7 @@ export class Duck {
     }
   }
 
-  update(w, h, ripples, fish, lotusManager) {
+  update(w, h, ripples, fish, lotusManager, leader = null) {
     // Wander steering
     this.wanderTimer -= 1;
     if (this.wanderTimer <= 0) {
@@ -60,6 +61,13 @@ export class Duck {
       this.wanderTimer = 100 + Math.random() * 200;
     }
 
+    if (leader && this.duckling) {
+      const tx = leader.x - Math.cos(leader.angle) * 48;
+      const ty = leader.y - Math.sin(leader.angle) * 48;
+      const distance = Math.hypot(tx - this.x, ty - this.y);
+      if (distance > 24) this.targetAngle = Math.atan2(ty - this.y, tx - this.x);
+      this.baseSpeed = distance > 85 ? 0.85 : distance < 24 ? 0.22 : 0.58;
+    }
     const ta = this.targetAngle;
     const ax = Math.cos(ta) * this.baseSpeed * this.breathingSlowdown;
     const ay = Math.sin(ta) * this.baseSpeed * this.breathingSlowdown;
@@ -141,7 +149,7 @@ export class Duck {
         const dx = f.x - this.x;
         const dy = f.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < DUCK_AVOID_RADIUS && dist > 0) {
+        if (dist < DUCK_AVOID_RADIUS * (this.duckling ? 0.5 : 1) && dist > 0) {
           const strength = (1 - dist / DUCK_AVOID_RADIUS) * DUCK_AVOIDANCE_FORCE;
           f.vx += (dx / dist) * strength * 0.3;
           f.vy += (dy / dist) * strength * 0.3;
@@ -163,10 +171,10 @@ export class Duck {
     const bob = this.bobActive ? Math.sin(this.bobPhase) * 1.5 : 0;
 
     // --- Shadow ---
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = '#000';
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#254C40';
     ctx.save();
-    ctx.translate(-3, 4);
+    ctx.translate(2, 4);
     ctx.scale(1.05, 1.05);
     ctx.beginPath();
     ctx.ellipse(0, 0, s * 0.55, s * 0.38, 0, 0, Math.PI * 2);
@@ -192,9 +200,9 @@ export class Duck {
     // --- Body (white oval) ---
     ctx.globalAlpha = 1;
     const bodyGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.5);
-    bodyGrad.addColorStop(0, '#F0E4D0');
-    bodyGrad.addColorStop(0.6, '#E8DCC8');
-    bodyGrad.addColorStop(1, '#DED4C0');
+    bodyGrad.addColorStop(0, (this.duckling ? '#F3DF95' : '#F8F7ED'));
+    bodyGrad.addColorStop(0.6, (this.duckling ? '#EAD082' : '#ECEEE0'));
+    bodyGrad.addColorStop(1, (this.duckling ? '#D8B767' : '#D5DECF'));
     ctx.fillStyle = bodyGrad;
     ctx.beginPath();
     ctx.ellipse(0, 0, s * 0.5, s * 0.35, 0, 0, Math.PI * 2);
@@ -202,7 +210,7 @@ export class Duck {
 
     // Subtle body edge
     ctx.globalAlpha = 0.15;
-    ctx.strokeStyle = '#C8B8A4';
+    ctx.strokeStyle = '#A0B49B';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
     ctx.ellipse(0, 0, s * 0.5, s * 0.35, 0, 0, Math.PI * 2);
@@ -210,7 +218,7 @@ export class Duck {
 
     // --- Wing lines (subtle feather texture) ---
     ctx.globalAlpha = 0.08;
-    ctx.strokeStyle = '#A09080';
+    ctx.strokeStyle = '#6F8B74';
     ctx.lineWidth = 0.6;
     for (const side of [-1, 1]) {
       ctx.beginPath();
@@ -220,7 +228,7 @@ export class Duck {
 
     // --- Tail feathers (small tuft at the back) ---
     ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#DED4C0';
+    ctx.fillStyle = (this.duckling ? '#D8B767' : '#D5DECF');
     ctx.beginPath();
     ctx.moveTo(-s * 0.48, 0);
     ctx.lineTo(-s * 0.68, -s * 0.08);
@@ -230,7 +238,7 @@ export class Duck {
 
     // Tail tip highlight
     ctx.globalAlpha = 0.3;
-    ctx.fillStyle = '#E8DCC8';
+    ctx.fillStyle = (this.duckling ? '#EAD082' : '#ECEEE0');
     ctx.beginPath();
     ctx.moveTo(-s * 0.5, 0);
     ctx.lineTo(-s * 0.65, -s * 0.04);
@@ -242,10 +250,10 @@ export class Duck {
     ctx.globalAlpha = 1;
     const headX = s * 0.42 + bob;
     const headY = 0;
-    const headR = s * 0.17;
+    const headR = s * (this.duckling ? 0.23 : 0.19);
 
     // Neck connection
-    ctx.fillStyle = '#E8DCC8';
+    ctx.fillStyle = (this.duckling ? '#EAD082' : '#ECEEE0');
     ctx.beginPath();
     ctx.moveTo(s * 0.35, -s * 0.1);
     ctx.quadraticCurveTo(headX - headR * 0.3, -headR * 0.6, headX, headY - headR * 0.5);
@@ -255,7 +263,7 @@ export class Duck {
     ctx.fill();
 
     // Head circle
-    ctx.fillStyle = '#F0E4D0';
+    ctx.fillStyle = (this.duckling ? '#F3DF95' : '#F8F7ED');
     ctx.beginPath();
     ctx.arc(headX, headY, headR, 0, Math.PI * 2);
     ctx.fill();
@@ -263,7 +271,7 @@ export class Duck {
     // --- Beak (small orange triangle) ---
     ctx.globalAlpha = 1;
     const beakX = headX + headR * 0.8 + bob * 0.5;
-    ctx.fillStyle = '#D4722A';
+    ctx.fillStyle = '#D59A56';
     ctx.beginPath();
     ctx.moveTo(beakX + s * 0.12, 0);
     ctx.lineTo(beakX - s * 0.02, -s * 0.05);
@@ -277,14 +285,14 @@ export class Duck {
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.arc(headX + headR * 0.25, headY + side * headR * 0.45, eyeR, 0, Math.PI * 2);
-      ctx.fillStyle = '#1A1A1A';
+      ctx.fillStyle = '#293F36';
       ctx.fill();
     }
 
     // --- Paddle feet (subtle, visible below body) ---
     ctx.globalAlpha = 0.2;
     const paddleSwing = Math.sin(this.paddlePhase) * 0.3;
-    ctx.fillStyle = '#D4722A';
+    ctx.fillStyle = '#D59A56';
     for (const side of [-1, 1]) {
       ctx.save();
       ctx.translate(-s * 0.15, side * s * 0.38);

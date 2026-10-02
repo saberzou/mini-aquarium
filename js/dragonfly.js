@@ -25,7 +25,7 @@ class Dragonfly {
     const tx = w * (0.2 + Math.random() * 0.6);
     const ty = h * (0.2 + Math.random() * 0.6);
     const angle = Math.atan2(ty - this.y, tx - this.x);
-    this.speed = 2.5 + Math.random() * 2;
+    this.speed = 1.8 + Math.random() * 1.1;
     this.vx = Math.cos(angle) * this.speed;
     this.vy = Math.sin(angle) * this.speed;
     this.angle = angle;
@@ -73,7 +73,7 @@ class Dragonfly {
     ctx.save();
     ctx.translate(this.x + this.shadowOffX, this.y + this.shadowOffY);
     ctx.rotate(this.angle);
-    ctx.globalAlpha = 0.15;
+    ctx.globalAlpha = 0.08;
     this._drawShape(ctx, s, wingBeat, 'rgba(0,0,0,1)');
     ctx.restore();
 
@@ -90,8 +90,8 @@ class Dragonfly {
     const tilt = wingBeat * 0.10; // faster flutter
 
     // --- Wings (4 elongated leaf shapes, spread outward) ---
-    const wingColor = shadowColor || 'rgba(100,180,220,0.55)';
-    const veinColor = shadowColor || 'rgba(30,80,130,0.3)';
+    const wingColor = shadowColor || 'rgba(231,245,225,0.66)';
+    const veinColor = shadowColor || 'rgba(67,108,92,0.25)';
     ctx.globalAlpha = shadowColor ? ctx.globalAlpha : 0.7;
 
     const wings = [
@@ -143,7 +143,7 @@ class Dragonfly {
     // Thorax (wider segment)
     ctx.beginPath();
     ctx.ellipse(s * 0.1, 0, s * 0.45, s * 0.28, 0, 0, Math.PI * 2);
-    ctx.fillStyle = shadowColor || '#E8B830';
+    ctx.fillStyle = shadowColor || '#85A391';
     ctx.fill();
 
     // Abdomen / tail (long tapered)
@@ -151,12 +151,12 @@ class Dragonfly {
     ctx.moveTo(-s * 0.2, -s * 0.18);
     ctx.bezierCurveTo(-s * 0.8, -s * 0.14, -s * 1.8, -s * 0.06, -s * 2.2, 0);
     ctx.bezierCurveTo(-s * 1.8, s * 0.06, -s * 0.8, s * 0.14, -s * 0.2, s * 0.18);
-    ctx.fillStyle = shadowColor || '#D4960B';
+    ctx.fillStyle = shadowColor || '#577E70';
     ctx.fill();
 
     // Tail stripes
     if (!shadowColor) {
-      ctx.strokeStyle = 'rgba(180,80,20,0.4)';
+      ctx.strokeStyle = 'rgba(34,74,62,0.32)';
       ctx.lineWidth = s * 0.06;
       for (let i = 1; i <= 5; i++) {
         const tx = -s * 0.3 - i * s * 0.32;
@@ -171,18 +171,18 @@ class Dragonfly {
     // Head
     ctx.beginPath();
     ctx.ellipse(s * 0.55, 0, s * 0.25, s * 0.22, 0, 0, Math.PI * 2);
-    ctx.fillStyle = shadowColor || '#E8B830';
+    ctx.fillStyle = shadowColor || '#85A391';
     ctx.fill();
 
     // Eyes
     if (!shadowColor) {
       ctx.beginPath();
       ctx.arc(s * 0.7, -s * 0.1, s * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = '#3A8C3A';
+      ctx.fillStyle = '#304F43';
       ctx.fill();
       ctx.beginPath();
       ctx.arc(s * 0.7, s * 0.1, s * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = '#3A8C3A';
+      ctx.fillStyle = '#304F43';
       ctx.fill();
       // Eye highlights
       ctx.beginPath();

@@ -14,7 +14,8 @@ Open `http://localhost:8080` in a browser. Serve over HTTP; ES modules do not ru
 
 - Tap to make ripples; drag to disturb the water.
 - Hold briefly to feed. After feeding starts, move your finger to scatter food.
-- Choose koi with the + button; select an existing variety to remove it.
+- Open the + picker and choose **Koi** or **Other animals**. Select a card to add/remove that companion.
+- Other animals include the white duck, a pair of yellow ducklings, a turtle, and occasional sunny-weather dragonfly visits. Ducklings follow the white duck when present, and swim independently otherwise. Animal selections are remembered on this device.
 - Use the breathing button for a repeating 4-second inhale / 6-second exhale.
 - Switch weather, music, and English/Chinese with the edge controls.
 - Press Escape to close the koi picker. Its cards support keyboard selection.
