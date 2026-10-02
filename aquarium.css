@@ -3,18 +3,18 @@
 html, body { background: #769E8F; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 body { background: radial-gradient(ellipse at 30% 16%, #B7CFB7 0, transparent 55%), radial-gradient(ellipse at 90% 85%, #547D74 0, transparent 65%), #8CAF9E; }
 #fish-canvas { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-#music-btn, #lang-btn, #breathing-btn, #add-koi-btn, .weather-tabs {
+#music-btn, #lang-btn, #breathing-btn, #add-aquarium-btn, .weather-tabs {
   background: var(--glass); color: var(--ink); border: 1px solid var(--edge);
   box-shadow: 0 4px 18px rgba(30,65,53,.045); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
 }
 #music-btn, #lang-btn { top: calc(20px + env(safe-area-inset-top)); }
 #music-btn { left: calc(20px + env(safe-area-inset-left)); }
 #lang-btn { right: calc(20px + env(safe-area-inset-right)); }
-#breathing-btn, #add-koi-btn { bottom: calc(22px + env(safe-area-inset-bottom)); }
+#breathing-btn, #add-aquarium-btn { bottom: calc(22px + env(safe-area-inset-bottom)); }
 #breathing-btn { left: calc(20px + env(safe-area-inset-left)); }
-#add-koi-btn { right: calc(20px + env(safe-area-inset-right)); }
+#add-aquarium-btn { right: calc(20px + env(safe-area-inset-right)); }
 #music-btn .bar { background: var(--ink); }
-#music-btn:hover, #lang-btn:hover, #breathing-btn:hover, #add-koi-btn:hover { background: rgba(247,251,240,.85); color: var(--ink); }
+#music-btn:hover, #lang-btn:hover, #breathing-btn:hover, #add-aquarium-btn:hover { background: rgba(247,251,240,.85); color: var(--ink); }
 .weather-tabs { top: calc(20px + env(safe-area-inset-top)); bottom: auto; height: 44px; border-radius: 25px; }
 .weather-tabs .weather-tab { height: 36px; }
 .weather-tab { height: 42px; color: #476657; padding: 0 17px; font-weight: 500; }
@@ -23,30 +23,30 @@ body { background: radial-gradient(ellipse at 30% 16%, #B7CFB7 0, transparent 55
 #breathing-label { color: #254C40; background: rgba(245,250,236,.66); border: 1px solid var(--edge); font-size: 17px; font-weight: 400; border-radius: 28px; padding: 12px 25px; }
 #pond-hint { position: fixed; z-index: 5; bottom: calc(91px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); white-space: nowrap; color: #244B3D; background: rgba(246,251,238,.55); padding: 9px 16px; border-radius: 24px; font-size: 12px; letter-spacing: .015em; pointer-events: none; transition: opacity 1.2s; }
 #pond-hint.dismissed { opacity: 0; }
-#koi-panel { bottom: calc(84px + env(safe-area-inset-bottom)); right: calc(20px + env(safe-area-inset-right)); width: min(414px, calc(100vw - 32px)); height: min(540px, calc(100dvh - 172px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); max-height: none; padding: 14px; gap: 8px; border: 1px solid rgba(251,255,241,.6); background: rgba(236,244,227,.93); box-shadow: 0 16px 60px rgba(25,58,43,.14); border-radius: 24px; overscroll-behavior: contain; scrollbar-width: thin; }
-.koi-card { border: 1px solid transparent; background: transparent; color: var(--ink); font: inherit; padding: 12px 6px; min-width: 0; gap: 5px; border-radius: 15px; }
-.koi-card:hover { background: rgba(255,255,247,.55); transform: none; }
-.koi-card.in-pond { background: rgba(255,255,247,.72); border-color: rgba(66,108,77,.2); }
-.koi-swatch { width: 104px; height: 56px; max-width: 100%; object-fit: contain; }
-.koi-name { color: #294D3E; font-size: 12px; font-weight: 600; }
-.koi-name-en { color: #546C5A; font-size: 11px; }
-.koi-desc { color: #60735F; font-size: 11px; line-height: 1.4; }
-.koi-status { width: 6px; height: 6px; background: #668970; box-shadow: none; top: 9px; right: 9px; }
+#aquarium-panel { bottom: calc(84px + env(safe-area-inset-bottom)); right: calc(20px + env(safe-area-inset-right)); width: min(414px, calc(100vw - 32px)); height: min(540px, calc(100dvh - 172px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); max-height: none; padding: 14px; gap: 8px; border: 1px solid rgba(251,255,241,.6); background: rgba(236,244,227,.93); box-shadow: 0 16px 60px rgba(25,58,43,.14); border-radius: 24px; overscroll-behavior: contain; scrollbar-width: thin; }
+.aquarium-card { border: 1px solid transparent; background: transparent; color: var(--ink); font: inherit; padding: 12px 6px; min-width: 0; gap: 5px; border-radius: 15px; }
+.aquarium-card:hover { background: rgba(255,255,247,.55); transform: none; }
+.aquarium-card.in-pond { background: rgba(255,255,247,.72); border-color: rgba(66,108,77,.2); }
+.aquarium-swatch { width: 104px; height: 56px; max-width: 100%; object-fit: contain; }
+.aquarium-name { color: #294D3E; font-size: 12px; font-weight: 600; }
+.aquarium-name-en { color: #546C5A; font-size: 11px; }
+.aquarium-desc { color: #60735F; font-size: 11px; line-height: 1.4; }
+.aquarium-status { width: 6px; height: 6px; background: #668970; box-shadow: none; top: 9px; right: 9px; }
 button:focus-visible { outline: 2px solid #254C40; outline-offset: 4px; }
 @media (max-width: 600px) {
-  #koi-panel { left: 12px; right: 12px; width: auto; grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #aquarium-panel { left: 12px; right: 12px; width: auto; grid-template-columns: repeat(3,minmax(0,1fr)); }
   #breathing-btn { left: calc(14px + env(safe-area-inset-left)); }
-  #add-koi-btn { right: calc(14px + env(safe-area-inset-right)); }
+  #add-aquarium-btn { right: calc(14px + env(safe-area-inset-right)); }
   .weather-tab { padding: 0 13px; }
-  .koi-card { padding: 9px 3px; }
-  .koi-swatch { width: 92px; }
+  .aquarium-card { padding: 9px 3px; }
+  .aquarium-swatch { width: 92px; }
 }
-@media (max-width: 350px) { #koi-panel { grid-template-columns: repeat(2,minmax(0,1fr)); } .weather-tab { padding: 0 10px; } }
+@media (max-width: 350px) { #aquarium-panel { grid-template-columns: repeat(2,minmax(0,1fr)); } .weather-tab { padding: 0 10px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 /* Category navigation stays visible while the companion collection scrolls. */
-#koi-panel { display: flex; flex-direction: column; padding: 10px; overflow: hidden; gap: 10px; }
+#aquarium-panel { display: flex; flex-direction: column; padding: 10px; overflow: hidden; gap: 10px; }
 .companion-tabs { display: flex; gap: 4px; flex: 0 0 auto; padding: 4px; border-radius: 16px; background: rgba(83,115,85,.07); }
 .companion-tabs button { flex: 1; min-height: 42px; padding: 8px 12px; border: 0; border-radius: 12px; color: #54705B; background: transparent; font: 500 13px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; cursor: pointer; }
 .companion-tabs button[aria-selected="true"] { background: #F7FAEF; color: #254C40; box-shadow: 0 2px 5px rgba(42,76,47,.05); }
@@ -55,8 +55,25 @@ button:focus-visible { outline: 2px solid #254C40; outline-offset: 4px; }
 .companion-grid[hidden] { display: none; }
 .animal-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .animal-card { min-height: 162px; padding: 12px 10px; }
-.animal-card .koi-name { font-size: 13px; }
-.animal-card .koi-desc { font-size: 12px; max-width: 160px; }
+.animal-card .aquarium-name { font-size: 13px; }
+.animal-card .aquarium-desc { font-size: 12px; max-width: 160px; }
 .animal-selection { margin-top: auto; padding-top: 5px; color: #526E58; font-size: 11px; }
 .animal-card.in-pond .animal-selection { color: #365C42; }
 @media (max-width: 350px) { .companion-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+/* Sea-glass controls, warm ivory selection, and marine typography. */
+:root { --ink: #234F63; --glass: rgba(229,248,246,.7); --edge: rgba(244,255,249,.5); }
+html, body { background: #328DAD; }
+body { background: radial-gradient(ellipse at 30% 16%, #86C9CD, #328DAD); }
+.weather-tab, .companion-tabs button { color: #426F80; }
+.weather-tab.active, .companion-tabs button[aria-selected="true"] { color: #234F63; background: #F1F7EE; }
+#aquarium-panel { background: rgba(225,243,239,.95); border-color: rgba(244,255,251,.65); box-shadow: 0 16px 60px rgba(16,64,89,.17); }
+.aquarium-name, #breathing-label, #pond-hint { color: #234F63; }
+.aquarium-name-en, .aquarium-desc, .animal-selection { color: #567C83; }
+.aquarium-status { background: #5A969F; }
+.aquarium-card.in-pond { background: rgba(252,251,234,.8); border-color: rgba(78,129,139,.2); }
+.animal-card.in-pond .animal-selection { color: #386875; }
+.companion-tabs { background: rgba(59,119,139,.07); }
+.companion-content { scrollbar-color: #98BDBC transparent; }
+#breathing-btn.breathing-active { color: #234F63; background: rgba(235,251,245,.9); }
+:root[data-light="night"] { --glass: rgba(215,233,240,.78); }

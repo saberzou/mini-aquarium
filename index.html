@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Koi Pond</title>
-  <meta name="description" content="A quiet pond of your own. Feed the koi, listen to the rain, and take a breath.">
-  <meta name="theme-color" content="#769E8F">
+  <title>Mini Aquarium</title>
+  <meta name="description" content="A tiny ocean of your own. Meet reef fish, explore the coral, and take a breath.">
+  <meta name="theme-color" content="#328DAD">
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -60,7 +60,7 @@
     }
 
     /* Add Koi button */
-    #add-koi-btn {
+    #add-aquarium-btn {
       position: fixed;
       bottom: 24px;
       right: 24px;
@@ -87,20 +87,20 @@
       -webkit-tap-highlight-color: transparent;
       transform: rotate(0deg) scale(1);
     }
-    #add-koi-btn:hover {
+    #add-aquarium-btn:hover {
       background: rgba(0,0,0,0.4);
       color: #fff;
       transform: rotate(0deg) scale(1);
     }
-    #add-koi-btn.panel-open {
+    #add-aquarium-btn.panel-open {
       transform: rotate(45deg) scale(1);
     }
-    #add-koi-btn.panel-open:hover {
+    #add-aquarium-btn.panel-open:hover {
       transform: rotate(45deg) scale(1);
     }
 
     /* Koi selector panel */
-    #koi-panel {
+    #aquarium-panel {
       position: fixed;
       bottom: 80px;
       right: 16px;
@@ -122,19 +122,19 @@
       transition: opacity 0.22s ease, transform 0.22s ease;
     }
     @media (max-width: 400px) {
-      #koi-panel {
+      #aquarium-panel {
         grid-template-columns: repeat(2, 1fr);
         right: 8px;
         left: 8px;
         width: auto;
       }
     }
-    #koi-panel.visible {
+    #aquarium-panel.visible {
       opacity: 1;
       transform: translateY(0) scale(1);
       pointer-events: auto;
     }
-    .koi-card {
+    .aquarium-card {
       background: rgba(255,255,255,0.08);
       border-radius: 12px;
       padding: 10px;
@@ -146,21 +146,21 @@
       gap: 6px;
       -webkit-tap-highlight-color: transparent;
     }
-    .koi-card:hover {
+    .aquarium-card:hover {
       background: rgba(255,255,255,0.18);
       transform: scale(1.04);
     }
-    .koi-card:active {
+    .aquarium-card:active {
       transform: scale(0.97);
     }
-    .koi-card.in-pond {
+    .aquarium-card.in-pond {
       background: rgba(255,255,255,0.15);
       border: 1px solid rgba(255,255,255,0.25);
     }
-    .koi-card.in-pond .koi-status {
+    .aquarium-card.in-pond .aquarium-status {
       display: block;
     }
-    .koi-status {
+    .aquarium-status {
       display: none;
       position: absolute;
       top: 6px;
@@ -171,15 +171,15 @@
       background: #4ADE80;
       box-shadow: 0 0 4px rgba(74,222,128,0.6);
     }
-    .koi-card {
+    .aquarium-card {
       position: relative;
     }
-    .koi-swatch {
+    .aquarium-swatch {
       width: 72px;
       height: 40px;
       flex-shrink: 0;
     }
-    .koi-name {
+    .aquarium-name {
       font-family: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
       font-size: 12px;
       font-weight: 600;
@@ -187,13 +187,13 @@
       text-align: center;
       line-height: 1.2;
     }
-    .koi-name-en {
+    .aquarium-name-en {
       font-size: 9px;
       color: rgba(255,255,255,0.5);
       text-align: center;
       line-height: 1.2;
     }
-    .koi-desc {
+    .aquarium-desc {
       font-size: 9px;
       color: rgba(255,255,255,0.45);
       text-align: center;
@@ -201,9 +201,9 @@
     }
 
     /* Scrollbar styling */
-    #koi-panel::-webkit-scrollbar { width: 4px; }
-    #koi-panel::-webkit-scrollbar-track { background: transparent; }
-    #koi-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+    #aquarium-panel::-webkit-scrollbar { width: 4px; }
+    #aquarium-panel::-webkit-scrollbar-track { background: transparent; }
+    #aquarium-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
 
     /* Breathing button (left side, symmetric with add-koi) */
     #breathing-btn {
@@ -349,14 +349,14 @@
     }
 
   </style>
-  <link rel="stylesheet" href="./pond.css?v=20261002f">
+  <link rel="stylesheet" href="./aquarium.css?v=1">
 </head>
 <body>
-  <canvas id="fish-canvas" role="img" aria-label="Interactive koi pond"></canvas>
+  <canvas id="fish-canvas" role="img" aria-label="Interactive mini aquarium"></canvas>
   <div id="pond-hint" data-i18n="hint">Tap for ripples · Hold to feed</div>
   <div class="weather-tabs">
-    <button class="weather-tab active" data-weather="sunny"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span data-i18n="sunny">晴</span></button>
-    <button class="weather-tab" data-weather="rainy"><svg viewBox="0 0 24 24"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M16 14v6M8 14v6M12 16v6"/></svg><span data-i18n="rainy">雨</span></button>
+    <button class="weather-tab active" data-weather="day"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span data-i18n="day">日光</span></button>
+    <button class="weather-tab" data-weather="night"><svg viewBox="0 0 24 24"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg><span data-i18n="night">月光</span></button>
   </div>
 
   <!-- Background music -->
@@ -376,16 +376,16 @@
   </div>
 
   <!-- Add Koi floating button -->
-  <button id="add-koi-btn" aria-expanded="false" aria-controls="koi-panel" title="添加锦鲤" data-i18n-title="addKoi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  <button id="add-aquarium-btn" aria-expanded="false" aria-controls="aquarium-panel" title="海洋伙伴" data-i18n-title="addKoi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
   <!-- Koi variety selector panel -->
-  <div id="koi-panel" role="group" aria-label="Pond companions" inert>
+  <div id="aquarium-panel" role="group" aria-label="Reef companions" inert>
     <div class="companion-tabs" role="tablist" aria-label="Categories" id="companion-tabs">
-      <button type="button" id="tab-koi" role="tab" aria-selected="true" aria-controls="koi-grid" data-i18n="koiCategory">Koi</button>
+      <button type="button" id="tab-fish" role="tab" aria-selected="true" aria-controls="aquarium-grid" data-i18n="koiCategory">Reef fish</button>
       <button type="button" id="tab-animals" role="tab" aria-selected="false" aria-controls="animal-grid" tabindex="-1" data-i18n="animalCategory">Other animals</button>
     </div>
     <div class="companion-content">
-      <div id="koi-grid" class="companion-grid" role="tabpanel" aria-labelledby="tab-koi"></div>
+      <div id="aquarium-grid" class="companion-grid" role="tabpanel" aria-labelledby="tab-fish"></div>
       <div id="animal-grid" class="companion-grid animal-grid" role="tabpanel" aria-labelledby="tab-animals" hidden></div>
     </div>
   </div>
@@ -394,15 +394,15 @@
     // ---- Localization (EN / 中) ----
     const I18N = {
       zh: {
-        sunny: '晴', rainy: '雨', hint: '轻触泛起涟漪 · 长按喂鱼', pond: '可互动的锦鲤池', choose: '池塘伙伴', koiCategory: '锦鲤', animalCategory: '其他动物', inPond: '已在池中',
-        music: '音乐', breathing: '呼吸模式', addKoi: '池塘伙伴',
+        day: '日光', night: '月光', hint: '轻触泛起涟漪 · 长按喂鱼', pond: '可互动的迷你水族馆', choose: '海洋伙伴', koiCategory: '珊瑚礁鱼', animalCategory: '其他动物', inPond: '已在海中',
+        music: '音乐', breathing: '呼吸模式', addKoi: '海洋伙伴',
         inhale: '吸气...', exhale: '呼气...',
         toggleLabel: 'EN',        // button shows the language you switch TO
         toggleTitle: '切换语言',
       },
       en: {
-        sunny: 'Sunny', rainy: 'Rainy', hint: 'Tap for ripples · Hold to feed', pond: 'Interactive koi pond', choose: 'Pond companions', koiCategory: 'Koi', animalCategory: 'Other animals', inPond: 'In your pond',
-        music: 'Music', breathing: 'Breathing', addKoi: 'Pond companions',
+        day: 'Daylight', night: 'Moonlight', hint: 'Tap for ripples · Hold to feed', pond: 'Interactive mini aquarium', choose: 'Reef companions', koiCategory: 'Reef fish', animalCategory: 'Other animals', inPond: 'In your aquarium',
+        music: 'Music', breathing: 'Breathing', addKoi: 'Reef companions',
         inhale: 'Inhale...', exhale: 'Exhale...',
         toggleLabel: '中',
         toggleTitle: 'Switch language',
@@ -410,7 +410,7 @@
     };
 
     // Default to saved preference, else the browser's language
-    function storedLanguage() { try { return localStorage.getItem('koi-lang'); } catch { return null; } }
+    function storedLanguage() { try { return localStorage.getItem('aquarium-lang'); } catch { return null; } }
     let currentLang = storedLanguage()
       || (navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en');
 
@@ -421,7 +421,7 @@
 
     function applyLanguage(lang) {
       currentLang = I18N[lang] ? lang : 'en';
-      try { localStorage.setItem('koi-lang', currentLang); } catch {}
+      try { localStorage.setItem('aquarium-lang', currentLang); } catch {}
       const dict = I18N[currentLang];
       document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
 
@@ -440,7 +440,7 @@
       if (langBtn) { langBtn.textContent = dict.toggleLabel; langBtn.title = dict.toggleTitle; }
 
       document.getElementById('fish-canvas').setAttribute('aria-label', dict.pond);
-      document.getElementById('koi-panel').setAttribute('aria-label', dict.choose);
+      document.getElementById('aquarium-panel').setAttribute('aria-label', dict.choose);
       // Notify dynamic consumers (koi cards, breathing label)
       langListeners.forEach(fn => fn(currentLang));
     }
@@ -465,8 +465,8 @@
     // Breathing button (standalone)
     document.getElementById('breathing-btn').addEventListener('click', () => {
       // Close koi panel if open
-      const panel = document.getElementById('koi-panel');
-      const koiBtn = document.getElementById('add-koi-btn');
+      const panel = document.getElementById('aquarium-panel');
+      const koiBtn = document.getElementById('add-aquarium-btn');
       if (panel && panel.classList.contains('visible')) {
         panel.classList.remove('visible');
         panel.inert = true;
@@ -523,22 +523,22 @@
     }
     requestAnimationFrame(updateBreathingUI);
   </script>
-  <script type="module" src="./js/audio.js?v=20261002"></script>
+  <script type="module" src="./js/audio.js?v=1"></script>
   <script type="module">
-    import { ANIMALS, drawAnimalPreview } from './js/animals.js?v=20261002c';
-    import { init } from './js/pond.js?v=20261002f';
-    import { Fish } from './js/fish.js?v=20261002';
-    import { KOI_VARIETIES } from './js/config.js?v=20261002';
+    import { ANIMALS, drawAnimalPreview } from './js/animals.js?v=1';
+    import { init } from './js/aquarium.js?v=1';
+    import { Fish } from './js/fish.js?v=1';
+    import { REEF_FISH } from './js/config.js?v=1';
     init();
 
-    const btn = document.getElementById('add-koi-btn');
-    const panel = document.getElementById('koi-panel');
-    const koiGrid = document.getElementById('koi-grid');
+    const btn = document.getElementById('add-aquarium-btn');
+    const panel = document.getElementById('aquarium-panel');
+    const koiGrid = document.getElementById('aquarium-grid');
     const animalGrid = document.getElementById('animal-grid');
 
     // Build koi cards
     function updateCardStates() {
-      document.querySelectorAll('#koi-grid .koi-card').forEach(card => {
+      document.querySelectorAll('#aquarium-grid .aquarium-card').forEach(card => {
         const nameEn = card.dataset.variety;
         const inPond = window.hasFish && window.hasFish(nameEn);
         card.classList.toggle('in-pond', inPond);
@@ -549,34 +549,34 @@
     // Card text elements keyed for language switching
     const cardLocalizers = [];
 
-    KOI_VARIETIES.forEach(variety => {
+    REEF_FISH.forEach(variety => {
       const card = document.createElement('button');
       card.type = 'button';
-      card.className = 'koi-card';
+      card.className = 'aquarium-card';
       card.dataset.variety = variety.nameEn;
 
       // Green status dot
       const statusDot = document.createElement('div');
-      statusDot.className = 'koi-status';
+      statusDot.className = 'aquarium-status';
       statusDot.setAttribute('aria-hidden', 'true');
       card.appendChild(statusDot);
 
       // Canvas koi swatch
       const canvas = document.createElement('canvas');
-      canvas.className = 'koi-swatch';
+      canvas.className = 'aquarium-swatch';
       canvas.width = 208;
       canvas.height = 112;
       canvas.setAttribute('aria-hidden', 'true');
       drawKoiSwatch(canvas, variety);
 
       const nameEl = document.createElement('div');
-      nameEl.className = 'koi-name';
+      nameEl.className = 'aquarium-name';
 
       const nameEnEl = document.createElement('div');
-      nameEnEl.className = 'koi-name-en';
+      nameEnEl.className = 'aquarium-name-en';
 
       const descEl = document.createElement('div');
-      descEl.className = 'koi-desc';
+      descEl.className = 'aquarium-desc';
 
       // Localizer: primary name = current language; secondary = the other
       cardLocalizers.push((lang) => {
@@ -611,19 +611,19 @@
 
     ANIMALS.forEach(animal => {
       const card = document.createElement('button');
-      card.type = 'button'; card.className = 'koi-card animal-card';
+      card.type = 'button'; card.className = 'aquarium-card animal-card';
       card.dataset.animal = animal.id;
-      const dot = document.createElement('span'); dot.className = 'koi-status'; dot.setAttribute('aria-hidden','true');
+      const dot = document.createElement('span'); dot.className = 'aquarium-status'; dot.setAttribute('aria-hidden','true');
       const canvas = document.createElement('canvas'); canvas.width = 208; canvas.height = 112;
-      canvas.className = 'koi-swatch'; canvas.setAttribute('aria-hidden','true');
+      canvas.className = 'aquarium-swatch'; canvas.setAttribute('aria-hidden','true');
       drawAnimalPreview(canvas,animal.id);
-      const name = document.createElement('span'); name.className = 'koi-name';
-      const desc = document.createElement('span'); desc.className = 'koi-desc';
+      const name = document.createElement('span'); name.className = 'aquarium-name';
+      const desc = document.createElement('span'); desc.className = 'aquarium-desc';
       const status = document.createElement('span'); status.className = 'animal-selection'; status.setAttribute('aria-hidden','true');
       const update = () => {
         const selected = window.hasAnimal(animal.id);
         card.classList.toggle('in-pond',selected); card.setAttribute('aria-pressed',String(selected));
-        status.textContent = selected ? (window.getLang()==='zh' ? '已在池中' : 'In your pond') : (window.getLang()==='zh' ? '添加' : 'Add');
+        status.textContent = selected ? (window.getLang()==='zh' ? '已在海中' : 'In your aquarium') : (window.getLang()==='zh' ? '添加' : 'Add');
       };
       cardLocalizers.push(lang=>{
         name.textContent = lang==='zh' ? animal.name : animal.nameEn;
@@ -661,7 +661,7 @@
     // Use the live renderer for previews so every variety is represented faithfully.
     function drawKoiSwatch(canvas, variety) {
       const ctx = canvas.getContext('2d');
-      const koi = Fish.fromVariety(132, 56, 48, variety);
+      const koi = Fish.fromVariety(116, 56, 39, variety);
       koi.angle = 0; koi.vx = 0; koi.vy = 0; koi.tailPhase = 0;
       koi.patternSeed = 1.4;
       koi.draw(ctx);

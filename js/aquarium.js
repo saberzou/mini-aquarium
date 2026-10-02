@@ -1,26 +1,24 @@
-// pond.js — Main orchestrator
-import { Fish } from './fish.js?v=20261002';
-import { RippleManager } from './ripple.js?v=20261002f';
-import { LotusManager } from './lotus.js?v=20261002b';
-import { AnimalManager } from './animals.js?v=20261002c';
-import { KOI_VARIETIES } from './config.js?v=20261002';
-import { readPreference, savePreference } from './storage.js?v=20261002';
-import { SimulationClock } from './clock.js?v=20261002';
-import { BreathingMode } from './breathing.js?v=20261002';
-import { RainManager } from './rain.js?v=20261002';
-import { FoodManager } from './food.js?v=20261002';
-import { CausticLayer } from './caustics.js?v=20261002f';
+// aquarium.js — Reef scene and shared interaction lifecycle
+import { Fish } from './fish.js?v=1';
+import { RippleManager } from './ripple.js?v=1';
+import { ReefManager } from './reef.js?v=1';
+import { AnimalManager } from './animals.js?v=1';
+import { REEF_FISH } from './config.js?v=1';
+import { readPreference, savePreference } from './storage.js?v=1';
+import { SimulationClock } from './clock.js?v=1';
+import { BreathingMode } from './breathing.js?v=1';
+import { FoodManager } from './food.js?v=1';
+import { CausticLayer } from './caustics.js?v=1';
 
 let canvas, ctx, w, h;
 let fish = [];
 let ripples;
-let lotus;
+let reef;
 let animals;
 let breathing;
-let rainManager;
 let foodManager;
 let causticLayer;
-let weather = readPreference('weather', 'sunny') === 'rainy' ? 'rainy' : 'sunny';
+let weather = readPreference('weather', 'day') === 'night' ? 'night' : 'day';
 const clock = new SimulationClock();
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let animationId = null;
@@ -39,10 +37,10 @@ function createFish(variety) {
 }
 function saveFish() { savePreference('fish', fish.map(f => f.varietyId)); }
 function initFish() {
-  const defaults = ['Kohaku', 'Taisho Sanshoku', 'Showa', 'Yamabuki Ogon', 'Tancho', 'Asagi', 'Karashigoi'];
+  const defaults = ['Clownfish', 'Blue tang', 'Yellow tang', 'Butterflyfish', 'Royal gramma', 'Chromis', 'Moorish idol'];
   const saved = readPreference('fish', defaults);
   const ids = Array.isArray(saved) ? saved : defaults;
-  fish = [...new Set(ids)].map(id => KOI_VARIETIES.find(v => v.nameEn === id)).filter(Boolean).map(createFish);
+  fish = [...new Set(ids)].map(id => REEF_FISH.find(v => v.nameEn === id)).filter(Boolean).map(createFish);
 }
 
 function resize() {
@@ -54,8 +52,7 @@ function resize() {
   canvas.style.height = h + 'px';
   ctx.setTransform(Math.min(window.devicePixelRatio || 1, 2), 0, 0, Math.min(window.devicePixelRatio || 1, 2), 0, 0);
   if (animals) animals.resize(w, h);
-  if (lotus) lotus.generate(w, h);
-  if (rainManager) rainManager.resize(w, h);
+  if (reef) reef.generate(w, h);
   if (causticLayer) causticLayer.resize(w, h);
 }
 
@@ -66,7 +63,7 @@ function handleInteraction(px, py) {
     f.flee(px, py);
   }
   animals?.poke(px, py);
-  lotus.nudge(px, py, 1.5);
+  reef.nudge(px, py, 1.5);
 }
 
 function handleDrag(px, py) {
@@ -76,14 +73,14 @@ function handleDrag(px, py) {
     ripples.add(px, py);
     lastDragRippleTime = now;
   }
-  lotus.nudge(px, py, 0.8);
+  reef.nudge(px, py, 0.8);
   for (const f of fish) {
     f.flee(px, py);
   }
 }
 
 function update() {
-  causticLayer.update(weather === 'rainy');
+  causticLayer.update(weather === 'night');
 
   // Long-press feeding check
   if (pressState && !pressState.dragging && !breathing.isActive()) {
@@ -113,10 +110,9 @@ function update() {
   foodManager.update();
 
   ripples.update();
-  lotus.update();
-  animals.update(ripples, fish, lotus, weather, breathing.isActive());
-  rainManager.update();
-  const targetAlpha = weather === 'rainy' ? 0.18 : 0;
+  reef.update();
+  animals.update(ripples, fish, reef, weather, breathing.isActive());
+  const targetAlpha = weather === 'night' ? 0.32 : 0;
   darknessAlpha += (targetAlpha - darknessAlpha) * 0.03;
 }
 
@@ -128,23 +124,19 @@ function loop(now) {
   lastPaint = now;
   ctx.clearRect(0, 0, w, h);
   causticLayer.draw(ctx, ripples.ripples, reducedMotion.matches);
+  reef.draw(ctx);
   breathing.drawRing(ctx, w, h);
   fish.forEach(f => {
     const bend = causticLayer.refraction(f.x, f.y, ripples.ripples, reducedMotion.matches);
     ctx.save(); ctx.translate(bend.x, bend.y); f.draw(ctx); ctx.restore();
   });
   ripples.draw(ctx);
-  lotus.draw(ctx);
   foodManager.draw(ctx);
   animals.draw(ctx, weather, breathing.isActive());
-  if (weather === 'rainy') {
-    rainManager.draw(ctx);
-    if (!reducedMotion.matches) lotus.drawRainDrops(ctx);
-  }
 
-  // Darkness overlay for rainy weather
+  // Moonlight depth overlay
   if (darknessAlpha > 0.005) {
-    ctx.fillStyle = `rgba(0,0,0,${darknessAlpha})`;
+    ctx.fillStyle = `rgba(5,22,62,${darknessAlpha})`;
     ctx.fillRect(0, 0, w, h);
   }
 
@@ -181,27 +173,22 @@ export function init() {
   ripples = new RippleManager();
   w = window.innerWidth;
   h = window.innerHeight;
-  lotus = new LotusManager(w, h);
+  reef = new ReefManager(w, h);
   animals = new AnimalManager(w, h);
   breathing = new BreathingMode();
-  rainManager = new RainManager(w, h);
   foodManager = new FoodManager();
   causticLayer = new CausticLayer(w, h);
 
-  // Weather toggle — controls liquid displacement + rain ripples
+  // Lighting toggle — daylight and moonlight
   window.setWeather = (mode) => {
-    weather = mode === 'rainy' ? 'rainy' : 'sunny';
+    weather = mode === 'night' ? 'night' : 'day';
     savePreference('weather', weather);
     document.querySelectorAll('.weather-tab').forEach(button => {
       const active = button.dataset.weather === weather;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     });
-    if (mode === 'rainy') {
-      rainManager.start();
-    } else {
-      rainManager.stop();
-    }
+    document.documentElement.dataset.light = weather;
 
   };
 
@@ -231,7 +218,7 @@ export function init() {
     resize();
   });
 
-  // One gesture state for mouse, pen and touch. Jitter never startles feeding koi.
+  // One gesture state for mouse, pen and touch. Jitter never startles feeding fish.
   canvas.addEventListener('pointerdown', e => {
     if (!e.isPrimary || e.button !== 0 || breathing.isActive()) return;
     canvas.setPointerCapture(e.pointerId);

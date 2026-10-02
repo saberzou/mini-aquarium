@@ -1,5 +1,5 @@
 // fish.js — Smooth Koi fish with spine-based animation
-import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js?v=20261002';
+import { WANDER_SPEED, MAX_SPEED, TURN_RATE, TAIL_SPEED, FEAR_RADIUS, FEAR_FORCE, FEAR_DECAY, FISH_COLORS } from './config.js?v=1';
 
 const SPINE_SEGMENTS = 20;
 
@@ -219,188 +219,54 @@ export class Fish {
     }
   }
 
-  // Create a fish from a KOI_VARIETIES entry
+  // Create a fish from a REEF_FISH entry
   static fromVariety(x, y, size, variety) {
     return new Fish(x, y, size, variety);
   }
 
   draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-
-    const spine = this._buildSpine();
-    const s = this.size;
-
-    // Build body outline (top + bottom)
-    const topPts = [];
-    const botPts = [];
-    for (let i = 0; i <= SPINE_SEGMENTS; i++) {
-      const t = i / SPINE_SEGMENTS;
-      const hw = this._bodyHalfWidth(t);
-      const sp = spine[i];
-      // Normal perpendicular to spine
-      let nx = 0, ny = -1;
-      if (i < SPINE_SEGMENTS) {
-        const dx = spine[i + 1].x - sp.x;
-        const dy = spine[i + 1].y - sp.y;
-        const nl = Math.sqrt(dx * dx + dy * dy) || 1;
-        nx = -dy / nl;
-        ny = dx / nl;
-      }
-      topPts.push({ x: sp.x + nx * hw, y: sp.y + ny * hw });
-      botPts.push({ x: sp.x - nx * hw, y: sp.y - ny * hw });
+    const s=this.size, c=this.color, disc=c.shape==='disc';
+    const height=disc ? .66 : c.shape==='slender' ? .32 : .46;
+    const wag=Math.sin(this.tailPhase)*s*.13;
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    // Soft seabed shadow separates the swimming layer from the reef.
+    ctx.save();ctx.translate(5,9);ctx.fillStyle='rgba(10,57,76,.12)';
+    ctx.beginPath();ctx.ellipse(-s*.2,0,s*.95,s*height,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    // A caudal fan with fine rays and flexible peduncle.
+    ctx.fillStyle=c.fin;ctx.strokeStyle='rgba(252,246,211,.4)';ctx.lineWidth=.7;
+    ctx.beginPath();ctx.moveTo(-s*.84,0);ctx.quadraticCurveTo(-s*1.16,wag-s*.15,-s*1.55,wag-s*.42);
+    ctx.quadraticCurveTo(-s*1.42,wag,-s*1.55,wag+s*.42);ctx.quadraticCurveTo(-s*1.14,wag+s*.15,-s*.84,0);ctx.fill();
+    for(let n=-2;n<=2;n++){ctx.beginPath();ctx.moveTo(-s*.9,0);ctx.lineTo(-s*1.45,wag+n*s*.16);ctx.stroke();}
+    // Distinct dorsal and anal fins give reef fish their broader silhouettes.
+    for(const side of [-1,1]){
+      ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(s*.32,side*s*height*.65);
+      ctx.quadraticCurveTo(-s*.2,side*s*(height+.42),-s*.82,side*s*(height*.7));
+      ctx.lineTo(-s*.65,side*s*.12);ctx.closePath();ctx.fill();
     }
-
-    // Fins sit beneath the body, with a translucent edge and quiet fin rays.
-    const tail = spine[SPINE_SEGMENTS];
-    const finColor = this.color.nameEn?.includes('Ogon') ? '#E4C788' : '#E9EFE1';
-    ctx.fillStyle = finColor;
-    ctx.globalAlpha = 0.65;
-    const tw = s * 0.43 * this.tailWidth;
-    ctx.beginPath();
-    ctx.moveTo(tail.x + s * 0.08, tail.y);
-    ctx.bezierCurveTo(tail.x - s * 0.12, tail.y - tw * 0.6, tail.x - s * 0.42, tail.y - tw * 1.2, tail.x - s * 0.62, tail.y - tw);
-    ctx.quadraticCurveTo(tail.x - s * 0.5, tail.y - tw * 0.3, tail.x - s * 0.27, tail.y);
-    ctx.quadraticCurveTo(tail.x - s * 0.5, tail.y + tw * 0.3, tail.x - s * 0.62, tail.y + tw);
-    ctx.bezierCurveTo(tail.x - s * 0.42, tail.y + tw * 1.2, tail.x - s * 0.12, tail.y + tw * 0.6, tail.x + s * 0.08, tail.y);
-    ctx.fill();
-    const shoulder = spine[6];
-    const finSwing = Math.sin(this.tailPhase * 0.55) * 0.055;
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(shoulder.x + s * 0.12, shoulder.y + side * s * 0.22);
-      ctx.bezierCurveTo(shoulder.x + s * 0.08, shoulder.y + side * s * 0.55,
-        shoulder.x - s * 0.35, shoulder.y + side * s * (0.75 + finSwing),
-        shoulder.x - s * 0.48, shoulder.y + side * s * 0.52);
-      ctx.quadraticCurveTo(shoulder.x - s * 0.4, shoulder.y + side * s * 0.3, shoulder.x, shoulder.y + side * s * 0.2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(250,253,242,0.25)';
-      ctx.lineWidth = 0.6;
-      ctx.beginPath();
-      ctx.moveTo(shoulder.x, shoulder.y + side * s * 0.23);
-      ctx.lineTo(shoulder.x - s * 0.3, shoulder.y + side * s * 0.55);
-      ctx.stroke();
+    ctx.globalAlpha=1;
+    const body=()=>{ctx.beginPath();ctx.moveTo(s*.86,0);ctx.bezierCurveTo(s*.65,-s*height*.28,s*.35,-s*height,-s*.14,-s*height);ctx.bezierCurveTo(-s*.7,-s*height,-s*.75,-s*.15,-s*.98,0);ctx.bezierCurveTo(-s*.75,s*.15,-s*.7,s*height,-s*.14,s*height);ctx.bezierCurveTo(s*.35,s*height,s*.65,s*height*.28,s*.86,0);ctx.closePath();};
+    body();ctx.fillStyle=c.body;ctx.fill();ctx.save();body();ctx.clip();
+    const band=(x,width,color)=>{ctx.strokeStyle=color;ctx.lineWidth=s*width;ctx.beginPath();ctx.moveTo(s*(x-.12),-s);ctx.bezierCurveTo(s*(x+.12),-s*.25,s*(x-.12),s*.25,s*(x+.1),s);ctx.stroke();};
+    if(c.pattern==='clown'){for(const x of [.44,-.2,-.73]){band(x,.22,'#6C5142');band(x,.15,c.spots);}}
+    if(c.pattern==='tang'){
+      ctx.fillStyle=c.spots;ctx.beginPath();ctx.ellipse(-s*.17,-s*.13,s*.59,s*.27,-.15,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c.body;ctx.beginPath();ctx.ellipse(-s*.09,-s*.08,s*.36,s*.13,-.15,0,Math.PI*2);ctx.fill();
     }
-
-    ctx.save();
-    ctx.translate(2, 4);
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#214D43';
-    this._drawBodyPath(ctx, topPts, botPts);
-    ctx.fill();
+    if(c.pattern==='half'){ctx.fillStyle=c.spots;ctx.fillRect(-s*1.1,-s,s,2*s);}
+    if(c.pattern==='butterfly'){for(let x=-.7;x<.5;x+=.18)band(x,.025,'#CAAD76');band(.48,.19,c.spots);band(-.73,.11,c.spots);}
+    if(c.pattern==='idol'){band(.38,.27,c.spots);band(-.45,.29,c.spots);band(-.75,.16,'#E1BB51');}
+    if(c.pattern==='dots'){
+      band(.04,.22,'#405967');ctx.fillStyle=c.spots;
+      for(let x=-.75;x<-.2;x+=.19)for(let y=-.4;y<=.4;y+=.21){ctx.beginPath();ctx.arc(x*s,y*s,s*.035,0,Math.PI*2);ctx.fill();}
+    }
+    const g=ctx.createLinearGradient(0,-s*height,0,s*height);g.addColorStop(0,'rgba(255,253,225,.28)');g.addColorStop(.4,'rgba(255,255,255,.02)');g.addColorStop(1,'rgba(21,55,69,.22)');ctx.fillStyle=g;ctx.fillRect(-2*s,-s,3*s,2*s);ctx.restore();
+    // Pectoral fin moves independently of the tail.
+    ctx.fillStyle=c.fin;ctx.globalAlpha=.7;ctx.beginPath();ctx.moveTo(s*.1,s*.05);ctx.quadraticCurveTo(-s*.05,s*(.4+Math.sin(this.tailPhase*.7)*.08),-s*.34,s*.21);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+    if(c.pattern==='idol'){ctx.strokeStyle='#F5EFDC';ctx.lineWidth=s*.055;ctx.beginPath();ctx.moveTo(0,-s*.54);ctx.bezierCurveTo(-s*.15,-s*1.28,-s*.8,-s*1.07,-s*1.35,-s*.94);ctx.stroke();}
+    ctx.strokeStyle='rgba(29,59,65,.22)';ctx.lineWidth=.7;ctx.beginPath();ctx.ellipse(s*.34,0,s*.13,s*height*.56,0,-1,1);ctx.stroke();
+    ctx.fillStyle='#F9EAD1';ctx.beginPath();ctx.arc(s*.54,-s*.1,s*.094,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#193D4D';ctx.beginPath();ctx.arc(s*.55,-s*.1,s*.057,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#FFFFFF';ctx.beginPath();ctx.arc(s*.565,-s*.12,s*.019,0,Math.PI*2);ctx.fill();
     ctx.restore();
-
-    ctx.globalAlpha = 1;
-    this._drawBodyPath(ctx, topPts, botPts);
-    ctx.fillStyle = this.color.body;
-    ctx.fill();
-    ctx.save();
-    this._drawBodyPath(ctx, topPts, botPts);
-    ctx.clip();
-    this._drawPattern(ctx, spine);
-    // A soft dorsal highlight gives volume without bleaching variety markings.
-    const light = ctx.createLinearGradient(0, -s * 0.4, 0, s * 0.4);
-    light.addColorStop(0, 'rgba(17,48,40,0.10)');
-    light.addColorStop(0.38, 'rgba(255,255,249,0.19)');
-    light.addColorStop(0.65, 'rgba(255,255,249,0.02)');
-    light.addColorStop(1, 'rgba(17,48,40,0.16)');
-    ctx.fillStyle = light;
-    ctx.fillRect(-s * 3, -s, s * 4, s * 2);
-    ctx.restore();
-
-    // Dorsal ridge follows the spine rather than protruding sideways.
-    ctx.beginPath();
-    ctx.moveTo(spine[6].x, spine[6].y);
-    ctx.quadraticCurveTo(spine[9].x, spine[9].y - s * 0.06, spine[13].x, spine[13].y);
-    ctx.strokeStyle = 'rgba(255,255,246,0.22)';
-    ctx.lineWidth = s * 0.04;
-    ctx.stroke();
-
-    const eye = spine[2];
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.arc(eye.x, eye.y + side * this._bodyHalfWidth(0.1) * 0.8, s * 0.037, 0, Math.PI * 2);
-      ctx.fillStyle = '#233833';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(eye.x + s * 0.008, eye.y + side * this._bodyHalfWidth(0.1) * 0.8 - s * 0.009, s * 0.012, 0, Math.PI * 2);
-      ctx.fillStyle = '#F9F9EF';
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  _drawPattern(ctx, spine) {
-    const name = this.varietyId || '';
-    const s = this.size;
-    const patch = (t, side, length, width, color, phase = 0) => {
-      const p = spine[Math.min(SPINE_SEGMENTS, Math.round(t * SPINE_SEGMENTS))];
-      const y = p.y + side * this._bodyHalfWidth(t);
-      ctx.beginPath();
-      for (let i = 0; i <= 36; i++) {
-        const a = i / 36 * Math.PI * 2;
-        const wobble = 1 + 0.13 * Math.sin(a * 3 + phase + this.patternSeed) + 0.06 * Math.cos(a * 5);
-        const x = p.x + Math.cos(a) * s * length * wobble;
-        const py = y + Math.sin(a) * s * width * wobble;
-        if (i === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
-      }
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    };
-    if (this.color.tancho) {
-      const crown = spine[3];
-      ctx.fillStyle = this.color.spots;
-      ctx.beginPath(); ctx.ellipse(crown.x, crown.y, s * 0.15, s * 0.17, 0, 0, Math.PI * 2); ctx.fill();
-      return;
-    }
-    const solid = ['Benigoi', 'Karashigoi', 'Chagoi', 'Karasugoi', 'Yamabuki Ogon', 'Gin Matsuba'].includes(name);
-    if (!solid && name !== 'Asagi') {
-      const bekko = name.includes('Bekko');
-      const placements = bekko ? [0.23, 0.4, 0.56, 0.7] : [0.2, 0.44, 0.68];
-      placements.forEach((t, i) => patch(t, (i % 2 ? -1 : 1) * 0.28, bekko ? 0.11 : 0.29, bekko ? 0.13 : 0.33, this.color.spots, i));
-      if (this.color.accent) {
-        [0.3, 0.53, 0.75].forEach((t, i) => patch(t, (i % 2 ? 1 : -1) * 0.45, 0.13, 0.18, this.color.accent, i + 2));
-      }
-    }
-    if (name === 'Asagi') {
-      patch(0.37, 0.9, 0.55, 0.12, this.color.belly);
-      patch(0.37, -0.9, 0.55, 0.12, this.color.belly);
-    }
-    if (['Asagi', 'Goshiki', 'Gin Matsuba'].includes(name)) {
-      ctx.strokeStyle = 'rgba(30,56,57,0.22)'; ctx.lineWidth = 0.6;
-      for (let row = -1; row <= 1; row++) {
-        for (let i = 4; i < 16; i += 2) {
-          const p = spine[i];
-          ctx.beginPath(); ctx.arc(p.x + (row % 2) * s * 0.08, p.y + row * s * 0.14, s * 0.1, -1.2, 1.2); ctx.stroke();
-        }
-      }
-    }
-  }
-
-  _drawBodyPath(ctx, topPts, botPts) {
-    ctx.beginPath();
-    ctx.moveTo(topPts[0].x, topPts[0].y);
-    for (let i = 1; i < topPts.length; i++) {
-      const prev = topPts[i - 1];
-      const curr = topPts[i];
-      ctx.quadraticCurveTo(
-        (prev.x + curr.x) / 2, (prev.y + curr.y) / 2,
-        curr.x, curr.y
-      );
-    }
-    // Connect to bottom in reverse
-    const last = botPts[botPts.length - 1];
-    ctx.lineTo(last.x, last.y);
-    for (let i = botPts.length - 2; i >= 0; i--) {
-      const prev = botPts[i + 1];
-      const curr = botPts[i];
-      ctx.quadraticCurveTo(
-        (prev.x + curr.x) / 2, (prev.y + curr.y) / 2,
-        curr.x, curr.y
-      );
-    }
-    ctx.closePath();
   }
 }

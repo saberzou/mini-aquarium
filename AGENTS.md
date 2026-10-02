@@ -1,0 +1,2 @@
+# Mini Aquarium development
+Read README.md. Use native Canvas 2D and ES modules; no build step. Preserve the feeding gesture, fixed-height picker, localization, reduced-motion handling, and isolated aquarium storage keys. Previews must use the same renderers as the scene. Run `node --experimental-vm-modules tests/regression.cjs` after behavior changes. Bump module and stylesheet version query strings when publishing changes. Never modify the separate koi-pond repository as part of aquarium work.

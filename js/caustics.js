@@ -60,9 +60,9 @@ export class CausticLayer {
     this.lastRender = -Infinity;
   }
 
-  update(rainy = false) {
+  update(night = false) {
     this.time += 1 / 60;
-    this.rain += ((rainy ? 1 : 0) - this.rain) * 0.025;
+    this.rain += ((night ? 1 : 0) - this.rain) * 0.025;
   }
 
   _lookup(x, y) {
@@ -147,16 +147,16 @@ export class CausticLayer {
         const depth = b * swell;
         const gleam = max(0, 1 - abs(a + sway * 0.8) * 0.8);
         const reflection = gleam ** 7 * 0.05;
-        const highlight = (caustic * 0.19 + reflection) * lightStrength + max(0,glint) * 0.13;
+        const highlight = (caustic * 0.13 + reflection) * lightStrength + max(0,glint) * 0.13;
         const trough = min(0,glint) * 8;
         const edge = this.edge[j * width + i];
-        const red = 135 + depth * 9 - edge * 17 + trough;
-        const green = 176 + depth * 8 - edge * 12 + trough;
-        const blue = 157 + depth * 9 - edge * 8 + trough;
+        const red = 64 + depth * 12 - edge * 25 + trough;
+        const green = 163 + depth * 12 - edge * 29 + trough;
+        const blue = 185 + depth * 10 - edge * 19 + trough;
         const k = (j * width + i) * 4;
-        data[k] = red + (236 - red) * highlight;
-        data[k+1] = green + (247 - green) * highlight;
-        data[k+2] = blue + (218 - blue) * highlight;
+        data[k] = red + (196 - red) * highlight;
+        data[k+1] = green + (239 - green) * highlight;
+        data[k+2] = blue + (234 - blue) * highlight;
         data[k+3] = 255;
       }
     }
